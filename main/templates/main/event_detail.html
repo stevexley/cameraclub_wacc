@@ -1,0 +1,103 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container">
+    {% now "Y-m-d" as todays_date %}
+    <div class="col-10">
+        <h1>{{ event.name }}</h1>
+        <h3>{{ event.starts.date }} {{ event.starts|time:"H:i" }} - {{ event.ends|time:"H:i" }}</h3>
+        {% if event.description %}
+        <p>{{ event.description }}</p>
+        {% endif %}
+        {% if event.competition_set.all %}
+        <div>
+            {% if event.starts|date:"Y-m-d" > todays_date %}
+            <h3>Competitions held on the night will be:</h3>
+            {% for competition in event.competition_set.all %}
+                {% if 'Open' in competition.type.type %}
+                <li class="list-group-item">{{ competition.type }}</li>
+                {% else%}
+                <li class="list-group-item">{{ competition.type }} - {{ competition.subject }}</li>
+                {% endif %}
+            {% endfor %}
+            <a class="btn btn-primary" href="{% url 'create_comp' event.id %}">Add Competition</a>
+            {% else %}
+                <h3>Competitions held on the night were:</h3>
+                {% comment %} Loop through Competitions {% endcomment %}
+                <ul class="list-group">
+                {% for comp in comps %}
+                    {% if 'Open' in comp.type.type %}
+                    <li class="list-group-item">{{ comp.type }}</li>
+                    {% else%}
+                    <li class="list-group-item">{{ comp.type }} - {{ comp.subject }}</li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+                {% for comp in comps %}
+                    {% comment %} if the comp has any images uploaded {% endcomment %}
+                    {% if comp.images.all %}
+                    </br>
+                        {% if 'Open' in comp.type.type %}
+                        <h4>{{ comp.type }} Awarded Images:</h4>
+                        {% else%}
+                        <h4>{{ comp.type }} (Subject: {{ comp.subject }}) Awarded Images:</h4>
+                        {% endif %}
+                        <ul class="image-gallery">
+                            {% for image in comp.images.all %}
+                                {% if image.award_set.all %}
+                                    {% include "main/includes/gallery_items.html" %}
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+        {% else %}
+            {% if "ompetition" in event.name %}
+            <a class="btn btn-primary" href="{% url 'create_comp' event.id %}">Add Competition</a>
+            {% endif %}
+        {% endif %}
+        {% comment %} If the event has galleries and they are public, show them {% endcomment %}
+        {% if event.gallery_set.all %}
+            {% for gallery in event.gallery_set.all %}
+            <div>
+                {% if gallery.public_after|date:"Y-m-d" < todays_date %}
+                <h3>Images from {{ gallery.name }}</h3>
+                    {% comment %} if the gallery has any images uploaded {% endcomment %}
+                    <ul class="image-gallery">
+                        {% for image in gallery.images.all %}
+                            {% include "main/includes/gallery_items.html" %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if gallery.member_upload_from|date:"Y-m-d" <= todays_date %}
+                    {% if gallery.member_upload_until|date:"Y-m-d" >= todays_date %}
+                        <a class="btn btn-primary" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% if event.file %}
+            {% comment %} {% with file_extension=event.file.url|split_dot|last|lower %}
+                {% if file_extension in ['jpg', 'jpeg', 'png', 'gif'] %}
+                <img class="img-thumbnail" src="{{ event.file.url }}" alt="Click to View">
+                {% elif file_extension in ['pdf'] %}
+                <!-- Render a PDF icon or thumbnail image -->
+                {% elif file_extension in ['doc', 'docx'] %}
+                <!-- Render a Word document icon or thumbnail image -->
+                {% else %}
+                <!-- Render a generic file icon or message for unsupported file types -->
+                {% endif %}
+            {% endwith %} {% endcomment %}
+        {% else %}
+        <!-- "Add permissions here - Committee Only" -->
+        <a class="btn btn-primary" href="#">Upload Flyer</a>
+        {% endif %}
+    </div>
+</div>    
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

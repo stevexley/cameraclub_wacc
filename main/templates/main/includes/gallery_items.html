@@ -1,0 +1,29 @@
+<li>
+  <img src="/media/{{ image.photo }}" alt="{{ image.title }}">
+  <div class="overlay">
+    <div>{{ image.title }}</div>
+    <div>by {{ image.author }}</div>
+    {% for award in image.award_set.all %}
+    <div>{{ award.type.name }} {{ award.type.awarded_by.awarded_by }}</div>
+    {% if forloop.last %}
+      {% if 'Open' in award.competition.type.type %}
+        <div>in {{ award.competition.type }}</div>
+      {% else%}
+        <div>in {{ award.competition.type }} - {{ award.competition.subject }}</div>
+      {% endif %}
+    {% endif %}
+    {% endfor %}
+  </div>
+  <!-- Link to trigger the modal -->
+  <a class="divLink" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}"></a> 
+</li>
+<!-- Modal for the image -->
+<div class="modal fade" id="imageModal{{ image.id }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-centrered">
+            <div class="modal-body">
+                <img src="/media/{{ image.photo }}" alt="{{ image.title }}">
+            </div>
+        </div>
+    </div>
+</div>

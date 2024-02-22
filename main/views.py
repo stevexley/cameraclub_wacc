@@ -1,0 +1,445 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.utils import timezone
+from django.contrib import messages
+from django.contrib.messages.views import SuccessMessageMixin
+from django.views import View
+from django.views.generic.list import ListView
+from django.views.generic.dates import YearArchiveView
+from django.views.generic.detail import DetailView
+from django.views.generic import CreateView
+from django.db.models import Sum, Max
+from django.db import transaction
+
+from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, Gallery, VoteOption, Vote, Award, AwardType
+from .forms import ImageForm, CompForm
+from datetime import datetime
+import subprocess
+
+class ProfileView(DetailView):
+    model = Member
+    template_name = 'main/member_profile.html'
+    
+class MemberListView(ListView):
+    model = Member
+    template_name = 'main/membership_list.html'
+    context_object_name = 'members'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['committee'] =  User.objects.filter(groups__name='Committee')     
+        return context
+    
+
+class MainGalleryView(ListView):
+    '''This is the main display of images on the front page
+    It displays upto 200 most recent images with an award with
+    display_award = True.  Some awards have display_award = False 
+    this allows for Entrance awards that give points but aren't 
+    given by members' votes or judge's choices.'''
+    model = Image
+    template_name = 'main/maingallery.html'
+    context_object_name = 'images'
+    
+    #annotate needed to prevent image duplicates
+    #exclude image objects with no image file
+    def get_queryset(self):
+        images = Image.objects.filter(
+            award__type__display_award=True
+        ).exclude(photo__isnull=True).annotate(max_end=Max('competitions__judging_closes')).order_by("-max_end")[:200]
+        
+        return images
+
+class AboutUsView(View):
+    '''This view just selects the Blub object that contains
+    the HTML of the About Us page.  This allows for easy 
+    editing of the page from teh admin pages without having
+    to touch the code.'''
+    template_name = 'main/about_us.html'
+    
+    def get(self, request):
+        blurb = Blurb.objects.filter(name="About Us").first()
+        if blurb:
+            return render(request, self.template_name, {'object': blurb})
+        else:
+            # Handle the case when the object is not found (e.g., return an error page)
+            return render(request, 'main/error.html')
+    
+
+class EventsView(YearArchiveView):
+    '''This page lists all open events with the competitions
+    and galleries in them by year.'''
+    model = Event
+    date_field = 'starts'
+    make_object_list = True
+    allow_future = True
+    context_object_name = 'events'
+    template_name = 'main/events.html'
+    
+    def get_year(self):
+        """Return the year for which this view should display data.
+        year can be set in the url, if not set it defaults to this year"""
+        year = self.year
+        if year is None:
+            try:
+                year = self.kwargs["year"]
+            except:
+                year = datetime.now().year
+        return year
+    
+    def get_queryset(self):
+        year = self.get_year()
+        return Event.objects.filter(starts__year=year).prefetch_related('competition_set', 'gallery_set')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        year = self.get_year()
+        context['next_year'] = None
+        context['previous_year'] = None
+        if Event.objects.filter(starts__year=(year - 1)):
+            context['previous_year'] = year - 1
+        if Event.objects.filter(starts__year=(year + 1)):
+            context['next_year'] = year + 1
+        return context
+
+def generate_pdf_thumbnail(pdf_path, thumbnail_path):
+    '''Convert the first page of the PDF to a PNG image using pdftoppm
+    Need to add a trigger when pdf is uploaded to perform this function'''
+    cmd = [
+        "pdf2image",
+        "-png",         # Output format (you can choose PNG or JPEG)
+        "-f", "1",      # First page
+        "-l", "1",      # Last page (first page in this case)
+        pdf_path,
+        thumbnail_path  # Output image path
+    ]
+    subprocess.run(cmd)
+
+    # Usage
+    # pdf_path = "path/to/your.pdf"
+    #thumbnail_path = "path/to/your/thumbnail.png"
+
+    # generate_pdf_thumbnail(pdf_path, thumbnail_path)
+
+class EventDetailView(DetailView):
+    model = Event
+    template_name = 'main/event_detail.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['comps'] = Competition.objects.filter(event = context['object'])
+        return context
+    
+class CompCreateView(CreateView):
+    model = Competition
+    form_class = CompForm
+    template_name = 'main/comp_form.html'
+    
+    def get_form_kwargs(self):
+        kwargs = super(CompCreateView, self).get_form_kwargs()
+        kwargs.update({'event_id': self.kwargs['event_id']})  # to pass event id to form
+        return kwargs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['event'] = Event.objects.get(id=self.kwargs['event_id'])
+        return context
+    
+    def get_success_url(self):
+        # Redirect to the EventDetailView for the event associated with the competition
+        return reverse_lazy('event', kwargs={'pk': self.kwargs['event_id']})
+      
+class EnterCompetitionView(SuccessMessageMixin, CreateView):
+    """This is the view for submitting a photo to a competition.
+    It creates an Image object, if there is a photo uploaded the photo is validated 
+    against the competition rules, where possible, the validation (and capitalisation
+    of the title) happen in the ImageForm."""
+    model = Image  
+    form_class = ImageForm
+    template_name = 'main/image_upload_form.html'
+    success_url = '/events/' + str(datetime.now().year) + '#today_bookmark'
+    success_message = "Entry Uploaded"
+
+    def get_initial(self):
+        competition = Competition.objects.get(id=self.kwargs['competition_id'])
+        author = Person.objects.get(user=self.request.user)
+        if 'Print' in competition.type.type:
+            print = True
+        else:
+            print = False
+        return {'competition': competition, 'author': author, 'print': print }
+    
+    def get_form_kwargs(self):
+        kwargs = super(EnterCompetitionView, self).get_form_kwargs()
+        kwargs.update({'competition_id': self.kwargs['competition_id']})  # to pass id to form
+        return kwargs
+
+    # Validation of photo done in the form
+    def form_valid(self, form):
+        # Get competition so we can add the image to it
+        competition = Competition.objects.get(id=self.kwargs['competition_id'])
+        image = form.save()
+        image.competitions.add(competition)
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['competition'] = Competition.objects.get(id=self.kwargs['competition_id'])
+        return context
+    
+class MemberVotingView(View):
+    template_name = 'member_voting.html'
+
+    def get(self, request, competition_id):
+        try:
+            competition = Competition.objects.get(pk=competition_id)
+            images = competition.images.all()
+            if competition.type.selection_not_places:
+                vote_options = VoteOption.objects.filter(active=True, judge_only=False, exclusive=False)
+            else:
+                vote_options = VoteOption.objects.filter(active=True, judge_only=False, exclusive=True)
+            voted_options = set(
+                Vote.objects.filter(voter=request.user.person.member, competition=competition).values_list('vote', flat=True)
+            )
+            context = {
+                'competition': competition,
+                'images': images,
+                'vote_options': vote_options,
+                'voted_options': voted_options,
+            }
+            return render(request, 'main/member_voting.html', context)
+        except Competition.DoesNotExist:
+            return redirect('events')
+
+    def post(self, request, competition_id):
+        try:
+            competition = Competition.objects.get(pk=competition_id)
+            check = None
+            for vote_option_id, image_id in request.POST.items():
+                vo = VoteOption.objects.get(id = vote_option_id)
+                if image_id.isdigit() and vote_option_id.isdigit():
+                    # Make sure member hasn't voted in this comp already
+                    check = Vote.objects.filter(competition = competition,
+                                        voter = request.user.person.member,
+                                        vote__id = vote_option_id)
+                    if check and vo.exclusive:
+                        messages.error(request, "You already voted in this competition")
+                        return redirect('events')
+                    else:
+                        vote_option = VoteOption.objects.get(pk=vote_option_id)
+                        if not vote_option.judge_only:
+                            vote = Vote.objects.update_or_create(
+                                voter=request.user.person.member,
+                                competition=competition,
+                                image_id=image_id,
+                                vote=vote_option,
+                            )   
+                    check = None
+            messages.success(request, "Votes lodged")
+            return redirect('events')
+        except (Competition.DoesNotExist, VoteOption.DoesNotExist):
+            return redirect('events')
+
+def count_votes(competition):
+    # Get all the images for the given competition
+    images = competition.images.all()
+
+    # Calculate total points for each image in the competition
+    image_points = {}
+    for image in images:
+        total_points = image.vote_set.aggregate(total_points=Sum('vote__points'))['total_points']
+        image_points[image] = total_points or 0
+
+    # Sort images based on total points in descending order
+    sorted_images = sorted(image_points.items(), key=lambda x: x[1], reverse=True)
+
+    # Assign awards to the top 6 scoring images
+    with transaction.atomic():
+        for rank, (image, points) in enumerate(sorted_images[:6], start=1):
+            # Create an Award instance for the image
+            if rank == 1:
+                awardtype = AwardType.objects.get(name = "1st")
+                award = Award.objects.create(image=image, type=awardtype, competition=competition)
+            elif rank == 2:
+                awardtype = AwardType.objects.get(name = "2nd")
+                award = Award.objects.create(image=image, type=awardtype, competition=competition)
+            elif rank == 3:
+                awardtype = AwardType.objects.get(name = "3rd")
+                award = Award.objects.create(image=image, type=awardtype, competition=competition)
+            elif rank == 4:
+                awardtype = AwardType.objects.get(name = "4th")
+                award = Award.objects.create(image=image, type=awardtype, competition=competition)
+            elif rank == 5:
+                awardtype = AwardType.objects.get(name = "5th")
+                award = Award.objects.create(image=image, type=awardtype, competition=competition)
+            elif rank == 6:
+                awardtype = AwardType.objects.get(name = "6th")
+                award = Award.objects.create(image=image, type=awardtype, competition=competition)
+    return 
+
+class CompAwardsView(DetailView):
+    '''This displays the images and awards for a competition.'''
+    
+    model = Competition
+    template_name = 'main/compgallery.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['images'] = Image.objects.filter(award__competition__id = self.kwargs['pk'],
+                                                 award__type__display_award = True).distinct()
+        context['member_awards'] = Award.objects.filter(competition__id = self.kwargs['pk'],
+                                                        type__awarded_by__members = True
+                                                        ).order_by('-type__points')
+        '''if there are no member awards, count the votes and create the awards.'''
+        if not context['member_awards']:
+            '''check to make sure voting has closed.
+            If it has closed count the votes, create the awards and add them to the context'''
+            competition = context['competition']
+            if timezone.make_naive(competition.judging_closes) < timezone.make_naive(timezone.now()):
+                count_votes(competition)
+                context['member_awards'] = Award.objects.filter(competition__id = self.kwargs['pk'],
+                                                        type__awarded_by__members = True
+                                                        ).order_by('-type__points')
+            
+        context['judge_awards'] = Award.objects.filter(competition__id = self.kwargs['pk'],
+                                                        type__awarded_by__judge = True
+                                                        ).order_by('-type__points')
+        return context
+
+class CompNightView(ListView):
+    '''List of comps on a night, this page will just be used to launch the full screen slideshows on 
+    competition nights.
+    Queryset is all competitions this month.'''
+    model = Competition
+    context_object_name = 'competitions'
+    template_name = 'main/compnight.html'
+    queryset = Competition.objects.filter(event__starts__month = datetime.now().month,
+                                          event__starts__year = datetime.now().year )
+
+class CompNightImagesView(DetailView):
+    '''Slideshow of images in competition'''
+    model = Competition
+    template_name = 'main/slideshow.html'
+    
+class CompNightJudgesView(DetailView):
+    '''Slideshow of images in competition'''
+    model = Competition
+    template_name = 'main/judge_slideshow.html'
+        
+class AddToGalleryView(SuccessMessageMixin, CreateView):
+    '''The view to upload to event galleries, similar to competition upload but without rules'''
+    model = Image  
+    form_class = ImageForm
+    template_name = 'main/image_upload_form.html'
+    success_url = '/events/' + str(datetime.now().year) + '#today_bookmark'
+    success_message = "Image Uploaded to Gallery"
+
+    def get_initial(self):
+        gallery = Gallery.objects.get(id=self.kwargs['gallery_id'])
+        author = Person.objects.get(user=self.request.user)
+        return {'gallery': gallery, 'author': author }
+    
+    def get_form_kwargs(self):
+        kwargs = super(AddToGalleryView, self).get_form_kwargs()
+        kwargs.update({'gallery_id': self.kwargs['gallery_id']})  # to pass id to form
+        return kwargs
+
+    # Validation of photo done in the form
+    def form_valid(self, form):
+        # Get gallery so we can add the image to it
+        gallery = Gallery.objects.get(id=self.kwargs['gallery_id'])
+        image = form.save()
+        image.galleries.add(gallery)
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['gallery'] = Gallery.objects.get(id=self.kwargs['gallery_id'])
+        return context
+    
+class AnnualTotalsView(ListView):
+    '''This page lists all people who have entered competitions and total points by year.'''
+    model = Person
+    template_name = 'main/totals.html'
+    
+    def get_year(self):
+        """Return the year for which this view should display data.
+        year can be set in the url, if not set it defaults to this year"""
+        try:
+            year = self.kwargs["year"]
+        except:
+            year = datetime.now().year
+        return year
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        year = self.get_year()
+        if Award.objects.filter(competition__event__starts__year=year -1):
+            context['previous_year'] = year - 1
+        if Award.objects.filter(competition__event__starts__year=year +1):
+            context['next_year'] = year + 1
+        context['year'] = year
+
+        # Assuming AwardType objects have unique names
+        comp_types = CompetitionType.objects.filter(contributes_to_annual = True,
+                                                    active = True)
+        context['comp_types'] = comp_types
+        # Get all people (Members only inlcudes current members and this needs to work for all
+        # previous years too)
+        members = Person.objects.all()
+
+        # Initialize a dictionary to store points totals for each person
+        points_totals = {}
+        
+        keyword_display_names = { 'print' : 'Print Award', 
+                    'digital' : 'Digital Award',
+                    'set' : 'Set Subject Award',
+                    'mono' : 'Open Mono Award',
+                    'colour' : 'Open Colour Award' }
+        
+        context['keyword_display_names'] = keyword_display_names
+        
+        # Iterate over members
+        for member in members:
+            # Initialize a dictionary to store points for each award type
+          
+            member_points = {}
+            combined_award_totals = {display_name: 0 for keyword, display_name in keyword_display_names.items()}
+            
+            # Iterate over award types
+            for comp_type in comp_types:
+                # Calculate points from awards for the current member and comp type
+                # Points from all awards in each comp type this year
+                award_points = Award.objects.filter(image__author=member, 
+                                                    competition__type=comp_type,
+                                                    competition__event__starts__year=year
+                                                    ).aggregate(total_points=Sum('type__points'))['total_points'] or 0
+                # One point for every entry in a comp for the current member and comp type this year
+                entry_points = Image.objects.filter(author=member, 
+                                                    competitions__type=comp_type,
+                                                    competitions__event__starts__year=year).count()
+                member_points[comp_type.type] = award_points + entry_points
+                
+            for keyword, display_name in keyword_display_names.items():
+                # Calculate points for the current member combining competition types for EOY trophies
+                combined_award_points = Award.objects.filter(image__author=member, 
+                                                    competition__type__type__icontains=keyword,
+                                                    competition__event__starts__year=year
+                                                    ).aggregate(total_points=Sum('type__points'))['total_points'] or 0
+                combined_entry_points = Image.objects.filter(author=member, 
+                                                    competitions__type__type__icontains=keyword,
+                                                    competitions__event__starts__year=year).count()
+                combined_award_totals[display_name] += combined_award_points + combined_entry_points
+            
+            grand_total = sum(member_points.values())          
+            
+            # Create array of points per member
+            points_totals[member] = {'points': member_points, 'combined_awards': combined_award_totals, 'grand_total': grand_total}
+            
+            # Add member and their points totals to the dictionary, add to context if any points
+            if grand_total > 0:
+                context['points_totals'] =  points_totals
+
+        # Now points_totals dictionary contains points totals for each member 
+
+        return context

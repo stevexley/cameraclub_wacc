@@ -1,0 +1,36 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container">
+    {% now "Y-m-d" as todays_date %}
+    <div class="col-10">
+        <h1>{{ member.person }}</h1>
+        <h4>Membership Details</h4>
+        <dl class="row">
+          <dt class="col-sm-3">Joined Date</dt>
+          <dd class="col-sm-9">{{ member.joined }}<dd>
+          <dt class="col-sm-3">Current Member</dt>
+          <dd class="col-sm-9">{{ member.current }}<dd>
+        </dl>
+        <h4>Member Details</h4>
+        <dl class="row">
+          <dt class="col-sm-3">Phone Number</dt>
+          <dd class="col-sm-9">{{ member.person.mobile }}<dd>
+          <dt class="col-sm-3">Email</dt>
+          <dd class="col-sm-9">{{ member.person.user.email }}<dd>
+        </dl>
+        <div>
+        {% if member.person.image_set.all %}
+            <ul class="image-gallery">
+                {% for image in member.person.image_set.all %}
+                    {% include "main/includes/gallery_items.html" %}
+                {% endfor %}
+            </ul>
+        {% endif %}
+        </div>
+    </div>
+</div>    
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "main/base.html" %}
+{% block content %}
+  <div class="container">
+    <div class="row">
+      <div class="col">
+        <h1>Points Totals for {{ year }}</h1>
+        <div class="d-grid gap-2 mb-3">
+
+        </div>
+        <div class="d-grid gap-2 d-md-block">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Member</th>
+                {% for comp_type in comp_types %}
+                  <th>{{ comp_type.type }}</th>
+                {% endfor %}
+                {% for display_name in keyword_display_names.values %}
+                  <th>{{ display_name }}</th>
+                {% endfor %}
+                <th>Grand Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for member, data in points_totals.items %}
+                {% if data.grand_total > 0 %}
+                <tr>
+                  <td>{{ member }}</td>
+                  {% for award_type, points in data.points.items %}
+                    <td>{{ points }}</td>
+                  {% endfor %}
+                  {% for display_name, points in data.combined_awards.items %}
+                    <td>{{ points }}</td>
+                  {% endfor %}
+                  <td>{{ data.grand_total }}</td>
+                </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <div class="col">
+    {% if previous_year %}
+    <a class="btn btn-primary float-start" href="{% url 'totals' year=previous_year %}">{{ previous_year }}</a>
+    {% endif %}
+    {% if next_year %}
+      <a class="btn btn-primary float-end" href="{% url 'totals' year=next_year %}">{{ next_year }}</a>
+    {% endif %}
+  </div>
+  <br/>
+{% endblock %}

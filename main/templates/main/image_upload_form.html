@@ -1,0 +1,48 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="col-10">
+        <form action="" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h2>Enter Image for {{ competition.event }}</h2>
+
+        <div class="m-5">
+            <h2>{{ competition.type }}</h2>
+            {% if 'Set' in competition.type.type %}
+                <h2>Subject: {{ competition.subject.subject }}</h2>
+                <h4>{{ competition.subject.description }}</h4>
+            {% endif %}
+            <ul class="list-group">
+                <li class="fw-bold list-group-item" >Rules:</li>
+                {% for rule in competition.type.rules.all %}
+                    <li class="list-group-item">{{ rule.description }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+        {% for field in form.visible_fields %}
+          <div class="mb-3">
+            <label>{{ field.label }}</label>
+            {% if field.errors %}
+                <div class="form-control is-invalid">
+                    {{ field }}
+                </div>
+                <div id="{{field.name}}Feedback" class="invalid-feedback">
+                    {{ field.errors }}
+                </div>
+            {% else %}
+                {{ field }}
+            {% endif %}
+            {% if field.name == 'title' %}
+            <div id="titleHelp" class="form-text">The title will be auto-capitalised for display.</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        <input class="btn btn-primary" type="submit" value="Submit" />
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="col">
+    <h1>Committee Members</h1>
+    <div class="row">
+        <ul class="list-group">
+            {% for user in committee %}
+                <li class="list-group-item">
+                    <div class="row align-items-start">
+                        {% if user.person.position_set.first %}
+                            <div class="col">{{ user.person.position_set.first }}</div>
+                        {% else %}
+                            <div class="col"> </div>
+                        {% endif %}
+                        <div class="col">{{ user.person }}</div>
+                        <div class="col"> </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <h1 class="mt-5">Current Members</h1>
+    <div class="row">
+        <ul class="list-group">
+            {% for member in members %}
+            {% if member.current %}
+                <li class="list-group-item">
+                    <div class="row align-items-start">
+                        <div class="col">{{ member.person }}</div>
+                        <div class="col"><a class="btn btn-primary">Email Member (Dummy)</a></div>
+                        <div class="col"><a class="btn btn-primary">SMS Member (Dummy)</a></div>
+                    </div>
+                </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

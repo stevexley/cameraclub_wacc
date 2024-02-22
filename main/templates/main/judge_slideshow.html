@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% block title %}
+      <title>WACC</title>
+    {% endblock %}
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body>
+    <div class="container-fluid px-0">
+        <div id="carouselExampleControls" class="carousel slide">
+            <div class="carousel-inner">
+                {% for image in competition.images.all %}
+                {% if forloop.first %}
+                <div class="carousel-item active" data-image-id={{ image.id }}>
+                    <div class="d-flex align-items-center justify-content-center min-vh-100">
+                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}" >
+                        <div class="carousel-caption badge rounded-pill bg-secondary bg-opacity-50 d-md-block">
+                            <h2>{{ image.title }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="carousel-item" data-image-id={{ image.id }}>
+                    <div class="d-flex align-items-center justify-content-center min-vh-100">
+                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}">
+                        <div id="Gold" class="hidden"><h2 id="GoldH2" class='hidden'>Gold - {{ image.title }} by {{ image.author }}</h2></div>
+                        <div id="Silver" class="hidden"><h2 id="SilverH2" class='hidden'>Silver - {{ image.title }} by {{ image.author }}</h2></div>
+                        <div id="Bronze" class="hidden"><h2 id="BronzeH2" class='hidden'>Bronze - {{ image.title }} by {{ image.author }}</h2></div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="carousel-item" data-image-id={{ image.id }}>
+                    <div class="d-flex align-items-center justify-content-center min-vh-100">
+                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}" data-image-id={{ image.id }}>
+                        <div class="carousel-caption badge rounded-pill bg-secondary bg-opacity-50 d-md-block">
+                            <h2>{{ image.title }}</h2>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="carousel-item" data-image-id={{ image.id }}>
+                    <div class="d-flex align-items-center justify-content-center min-vh-100">
+                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}">
+                        <div id="Gold" class="hidden"><h2 id="GoldH2" class='hidden'>Gold - {{ image.title }} by {{ image.author }}</h2></div>
+                        <div id="Silver" class="hidden"><h2 id="SilverH2" class='hidden'>Silver - {{ image.title }} by {{ image.author }}</h2></div>
+                        <div id="Bronze" class="hidden"><h2 id="BronzeH2" class='hidden'>Bronze - {{ image.title }} by {{ image.author }}</h2></div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </div>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+  </body>
+  <style>
+    /* Override Bootstrap carousel transition */
+    .carousel-item {
+        transition: none !important;
+    }
+  </style>
+  <script>
+    // Initialize Bootstrap 5 carousel
+    var myCarousel = new bootstrap.Carousel(document.getElementById('carouselExampleControls'), {
+        wrap: false, // Set wrap option to false to prevent looping back to the beginning
+        pause: false, // Disable pause on hover
+    });
+  </script>
+  <script>
+    // This script listens for 1 2 or 3 being pressed and adds gold, silver or bronze awards to 
+    // the image showing in the carousel
+    document.addEventListener('keydown', function(event) {
+        if (event.key === '1' || event.key === '2' || event.key === '3') { 
+            
+            var compPk = {{ competition.id }};
+            // Find the active carousel item
+            var activeItem = document.querySelector('.carousel-item.active');
+            if (!activeItem) return; // Exit if there's no active carousel item
+
+            // get the image.id and set it to imagePk 
+            var imagePk = activeItem.getAttribute('data-image-id');
+
+            // Find the corresponding elements within the active carousel item
+            var targetElementId;
+            var xhr = new XMLHttpRequest();
+            switch (event.key) {
+                case '1':
+                    targetElementId = 'Gold';
+                    awardType = 'gold';
+                    break;
+                case '2':
+                    targetElementId = 'Silver';
+                    awardType = 'silver';
+                    break;
+                case '3':
+                    targetElementId = 'Bronze';
+                    awardType = 'bronze';
+                    break;
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', `/competitions/${compPk}/award_${awardType}/${imagePk}`, true); // trigger functions via URL
+            xhr.onload = function () {
+                if (xhr.status == 200) {
+                    console.log(xhr.responseText); // Log the response from the server
+                }
+            };
+            xhr.send();
+
+            var targetElement1 = activeItem.querySelector('#' + targetElementId + 'H2');
+            var targetElement = activeItem.querySelector('#' + targetElementId);
+            
+            // Toggle the classes on the corresponding elements
+            // Make the correct caption visible
+            if (targetElement1 && targetElement) {
+                targetElement1.classList.toggle('hidden');
+                targetElement.classList.toggle('hidden');
+                targetElement.classList.toggle('carousel-caption');
+                targetElement.classList.toggle('badge');
+                targetElement.classList.toggle('rounded-pill');
+                targetElement.classList.toggle('bg-secondary');
+                targetElement.classList.toggle('bg-opacity-50');
+                targetElement.classList.toggle('d-md-block');
+            }
+        }
+    });
+</script>
+
+</html>
+
