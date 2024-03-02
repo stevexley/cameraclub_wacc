@@ -1,0 +1,78 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+    <div class="container-fluid px-0">
+        <div class="col">
+            <h1>Images</h1>
+            <div class="row">
+                <table class="table">
+                    <tr>
+                        <th>Number</th>
+                        <th>Title</th>
+                        <th>Award</th>
+                        <th>Comments/Notes</th>
+                    </tr>
+                    {% for image in competition.images.all %}
+                    <tr>
+                        <td>{{ forloop.counter }} </td>
+                        <td>{{ image.title }}</td>
+                        <td>        </td>
+                        <td>                                                                      <br/><br/><br/></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+
+        <div id="carouselControls" class="carousel slide">
+            <div class="carousel-inner">
+                {% for image in competition.images.all %}
+                {% if forloop.first %}
+                <div class="carousel-item active" data-image-id={{ image.id }}>
+                    <div class="d-flex align-items-center justify-content-center min-vh-100">
+                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}" >
+                        <div class="carousel-caption badge rounded-pill bg-secondary bg-opacity-50 d-md-block">
+                            <h2>{{ image.title }}</h2>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="carousel-item" data-image-id={{ image.id }}>
+                    <div class="d-flex align-items-center justify-content-center min-vh-100">
+                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}" data-image-id={{ image.id }}>
+                        <div class="carousel-caption badge rounded-pill bg-secondary bg-opacity-50 d-md-block">
+                            <h2>{{ image.title }}</h2>
+                        </div>
+                        
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselControls" data-bs-slide="prev">
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselControls" data-bs-slide="next">
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+  <style>
+    /* Override Bootstrap carousel transition */
+    .carousel-item {
+        transition: none !important;
+    }
+  </style>
+  <script>
+    // Initialize Bootstrap 5 carousel
+    var myCarousel = new bootstrap.Carousel(document.getElementById('carouselExampleControls'), {
+        wrap: false, // Set wrap option to false to prevent looping back to the beginning
+        pause: false, // Disable pause on hover
+    });
+  </script>
+{% endblock %}
+

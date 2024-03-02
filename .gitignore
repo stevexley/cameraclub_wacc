@@ -1,1 +1,4 @@
 /.vscode
+/media
+/cameraclub/__pycache__
+/import.log

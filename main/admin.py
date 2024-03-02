@@ -36,7 +36,7 @@ class JudgeAdmin(admin.ModelAdmin):
 class ImageAdmin(admin.ModelAdmin):
     search_fields = [ 'title' ]
     date_hierarchy = 'competitions__event__starts'
-    list_display = [ 'title', 'author']
+    list_display = [ 'title', 'print','author', 'photo']
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):

@@ -2,15 +2,17 @@ import io
 import re 
 import nltk
 import cv2
+import os
 import numpy as np
 from PIL import Image
 from nltk.corpus import stopwords
 from itertools import chain
 from datetime import datetime, timedelta
-from .models import Event, Competition, Award
+from .models import Event, Competition, Award, Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import HttpResponse
 from django.contrib import messages
+from django.conf import settings
 
 def setTitleCase(title):
     '''This function converts a string into titlecase while ignoring "stopwords"
@@ -70,22 +72,39 @@ def checkOneEntry(author, competition):
             return False
     return True
 
-def checkMono(photo, hue_threshold=10):
+# def checkMono(photo, hue_threshold=2):
+    # try:
+    #     # Read the image
+    #     img = photo2img(photo)
+
+    #     # Convert the image to the HSV color space
+    #     hsv_image = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    #     # Extract the hue channel
+    #     hue_channel = hsv_image[:, :, 0]
+
+    #     # Calculate the standard deviation of the hue channel
+    #     hue_std = np.std(hue_channel)
+
+    #     # Compare the standard deviation to the hue threshold
+    #     if hue_std <= hue_threshold:
+    #         return True
+    #     else:
+    #         return False
+    
+def checkMono(photo, unique_colors_threshold=64):
     try:
         # Read the image
         img = photo2img(photo)
 
-        # Convert the image to the HSV color space
-        hsv_image = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        # Convert the image to grayscale
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        # Extract the hue channel
-        hue_channel = hsv_image[:, :, 0]
+        # Calculate the number of unique colors in the image
+        unique_colors = len(np.unique(gray_img))
 
-        # Calculate the standard deviation of the hue channel
-        hue_std = np.std(hue_channel)
-
-        # Compare the standard deviation to the hue threshold
-        if hue_std <= hue_threshold:
+        # Compare the number of unique colors to the threshold
+        if unique_colors <= unique_colors_threshold:
             return True
         else:
             return False
@@ -108,7 +127,7 @@ def createwaccevents(request):
     Annual Dinner 1st Monday in December.
     Clean up will be needed but this saves a bunch of repetative creation.'''
     year = datetime.now().year + 1
-    for month in range (1,11):
+    for month in range (1,12):
         first_date = (year, month, 1)
         wkshop_date = nth_weekday(first_date, 1, 0)
         start_time = datetime.strptime("19:30", "%H:%M").time()
@@ -213,3 +232,35 @@ def award_bronze(request, comp_pk, image_pk):
     )
     bronze.save()
     return HttpResponse("Bronze Awarded")
+
+def import_pics(request):
+    '''Loop through images, find files in media directory that match author name and title
+    add matching filename as photo.'''
+    images = Image.objects.filter(photo='')
+    directory = settings.PHOTOS_ROOT
+    for img in images:
+        title = img.title.lower()
+        name = img.author.firstname.lower() + img.author.surname.lower()
+        for pic in os.listdir(directory):
+            FileName = os.fsdecode(pic)
+            filename = FileName.lower()
+            if title in filename:
+                if name in filename:
+                    img.photo = "photos/" + FileName
+                    img.save()
+                    with open('import.log', "a") as logfile:
+                        logfile.write(FileName + " added to " + str(img))
+                        logfile.write("\n")
+                else:
+                    with open('import.log', "a") as logfile:
+                        logfile.write(filename + " does not match " + str(img.author))
+                        logfile.write("\n")
+    return HttpResponse("Imported Pics")
+                    
+def cleanup_photos(request):
+    '''Remove badly imported photos'''
+    images = Image.objects.filter(photo = '')
+    for img in images:
+        img.photo = None
+        img.save()
+         

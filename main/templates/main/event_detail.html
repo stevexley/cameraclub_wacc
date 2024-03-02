@@ -15,9 +15,31 @@
             <h3>Competitions held on the night will be:</h3>
             {% for competition in event.competition_set.all %}
                 {% if 'Open' in competition.type.type %}
-                <li class="list-group-item">{{ competition.type }}</li>
+                <li class="list-group-item my-3">{{ competition.type }}
+                {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" > todays_date and user.person.member.current and "igital" in competition.type.type %}
+                    <a class="btn btn-primary" href="{% url 'enter_competition' competition.id %}" >Upload Entry</a>
+                {% endif %}
+                {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type %}
+                    {% if user.person.member.current %}
+                        <a class="btn btn-primary" href="{% url 'competition_vote' competition.id %}">Vote</a>
+                    {% endif %}
+                    {% if user.person.judge == competition.judge or user.person.position %}
+                        <a class="btn btn-primary" href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                    {% endif %}
+                {% endif %}</li>
                 {% else%}
-                <li class="list-group-item">{{ competition.type }} - {{ competition.subject }}</li>
+                <li class="list-group-item my-3">{{ competition.type }} - {{ competition.subject }}
+                {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" > todays_date and user.person.member.current and "igital" in competition.type.type %}
+                    <a class="btn btn-primary" href="{% url 'enter_competition' competition.id %}" >Upload Entry</a>
+                {% endif %}
+                {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type %}
+                    {% if user.person.member.current %}
+                        <a class="btn btn-primary" href="{% url 'competition_vote' competition.id %}">Vote</a>
+                    {% endif %}
+                    {% if user.person.judge == competition.judge or user.person.position %}
+                        <a class="btn btn-primary" href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                    {% endif %}
+                {% endif %}</li>
                 {% endif %}
             {% endfor %}
             <a class="btn btn-primary" href="{% url 'create_comp' event.id %}">Add Competition</a>
@@ -55,7 +77,14 @@
         </div>
         {% else %}
             {% if "ompetition" in event.name %}
-            <a class="btn btn-primary" href="{% url 'create_comp' event.id %}">Add Competition</a>
+                <div>
+                {% if event.competition_set.all %}
+                    <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add Competition</a>
+                {% else %}
+                    <a class="btn btn-primary" href="{% url 'create_compnight' event.id %}">Setup Competition Night</a>
+                    <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add a Single Competition</a>
+                {% endif %}
+                </div>
             {% endif %}
         {% endif %}
         {% comment %} If the event has galleries and they are public, show them {% endcomment %}
@@ -93,7 +122,7 @@
             {% endwith %} {% endcomment %}
         {% else %}
         <!-- "Add permissions here - Committee Only" -->
-        <a class="btn btn-primary" href="#">Upload Flyer</a>
+        <a class="btn btn-primary mt-1" href="#">Upload Flyer</a>
         {% endif %}
     </div>
 </div>    

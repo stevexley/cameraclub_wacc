@@ -19,8 +19,11 @@ class ImageForm(forms.ModelForm):
             visible.field.widget.attrs['placeholder'] = visible.field.label
             visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
         self.fields['print'].widget.attrs['class'] = 'form-check-input form-check-inline'
+        competition = kwargs['initial']['competition']
+        if "print" in competition.type.type.lower():
+            self.fields['print'].initial = True
         self.fields['author'].widget = forms.HiddenInput()
-                
+        
     def clean_title(self):
         title = self.cleaned_data.get('title')
         if title:
@@ -31,9 +34,10 @@ class ImageForm(forms.ModelForm):
         photo = self.cleaned_data.get('photo')
         author = self.cleaned_data.get('author')
         try:
-            competition = Competition.objects.get(id = self.competition_id)
+            competition = self.initial['competition']
             if photo:
                 for rule in competition.type.rules.all():
+                    print(rule.rule)
                     if '<= 1920px wide' in rule.rule:
                         if checkWidth(photo):
                             pass
@@ -54,13 +58,13 @@ class ImageForm(forms.ModelForm):
                             pass
                         else:
                             raise ValidationError("This isn't a monochrome image")
-                    if 'Colour' in rule.rule:
+                    elif 'Colour' in rule.rule:
                         if checkMono(photo):
                             raise ValidationError("This isn't a colour image")
                         else:
                             pass
-        except:
-            pass
+        except Exception as e:
+            print(f"Error: {e}")
         return photo      
     
     class Meta:
@@ -107,3 +111,15 @@ class CompForm(forms.ModelForm):
     class Meta:
         model = Competition
         exclude = ['images',]        
+        
+class CompetitionNightSetupForm(forms.Form):
+ 
+    COLOUR_CHOICES = [('colour', 'Colour'), ('mono', 'Monochrome')]
+
+    colour_or_mono = forms.ChoiceField(choices=COLOUR_CHOICES)
+    if datetime.now().month > 8:
+        set_subject = forms.ModelMultipleChoiceField(queryset=Subject.objects.filter(year=datetime.now().year + 1))
+    else:
+        set_subject = forms.ModelMultipleChoiceField(queryset=Subject.objects.filter(year=datetime.now().year))
+    # competition_types = CompetitionType.objects.all()  # Assuming you want all competition types
+    

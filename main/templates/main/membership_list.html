@@ -29,8 +29,8 @@
                 <li class="list-group-item">
                     <div class="row align-items-start">
                         <div class="col">{{ member.person }}</div>
-                        <div class="col"><a class="btn btn-primary">Email Member (Dummy)</a></div>
-                        <div class="col"><a class="btn btn-primary">SMS Member (Dummy)</a></div>
+                        <div class="col">{{ member.person.user.email }}</div>
+                        <div class="col">{{ member.person.mobile }}</div>
                     </div>
                 </li>
             {% endif %}

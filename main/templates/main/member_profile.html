@@ -22,7 +22,7 @@
         <div>
         {% if member.person.image_set.all %}
             <ul class="image-gallery">
-                {% for image in member.person.image_set.all %}
+                {% for image in images %}
                     {% include "main/includes/gallery_items.html" %}
                 {% endfor %}
             </ul>

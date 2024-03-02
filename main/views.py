@@ -1,7 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.http import Http404
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.contrib import messages
+from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.messages.views import SuccessMessageMixin
 from django.views import View
 from django.views.generic.list import ListView
@@ -11,17 +14,27 @@ from django.views.generic import CreateView
 from django.db.models import Sum, Max
 from django.db import transaction
 
-from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, Gallery, VoteOption, Vote, Award, AwardType
-from .forms import ImageForm, CompForm
-from datetime import datetime
+from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
+    Gallery, VoteOption, Vote, Award, AwardType, Subject, Position
+from .forms import ImageForm, CompForm, CompetitionNightSetupForm
+from datetime import datetime, timedelta
 import subprocess
 
-class ProfileView(DetailView):
+class ProfileView(PermissionRequiredMixin, DetailView):
     model = Member
+    permission_required = "main.change_member"
     template_name = 'main/member_profile.html'
     
-class MemberListView(ListView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        person = context['member'].person
+        context["images"] = Image.objects.exclude(photo='').filter(author = person )
+        return context
+    
+    
+class MemberListView(PermissionRequiredMixin, ListView):
     model = Member
+    permission_required = "main.change_member"
     template_name = 'main/membership_list.html'
     context_object_name = 'members'
     
@@ -44,9 +57,9 @@ class MainGalleryView(ListView):
     #annotate needed to prevent image duplicates
     #exclude image objects with no image file
     def get_queryset(self):
-        images = Image.objects.filter(
+        images = Image.objects.exclude(photo='').filter(
             award__type__display_award=True
-        ).exclude(photo__isnull=True).annotate(max_end=Max('competitions__judging_closes')).order_by("-max_end")[:200]
+        ).annotate(max_end=Max('competitions__judging_closes')).order_by("-max_end")[:200]
         
         return images
 
@@ -102,6 +115,7 @@ class EventsView(YearArchiveView):
             context['next_year'] = year + 1
         return context
 
+@permission_required("main.change_event")
 def generate_pdf_thumbnail(pdf_path, thumbnail_path):
     '''Convert the first page of the PDF to a PNG image using pdftoppm
     Need to add a trigger when pdf is uploaded to perform this function'''
@@ -128,10 +142,12 @@ class EventDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['comps'] = Competition.objects.filter(event = context['object'])
+        context['user'] = self.request.user
         return context
     
-class CompCreateView(CreateView):
+class CompCreateView(PermissionRequiredMixin, CreateView):
     model = Competition
+    permission_required = "main.change_competition"
     form_class = CompForm
     template_name = 'main/comp_form.html'
     
@@ -148,12 +164,107 @@ class CompCreateView(CreateView):
     def get_success_url(self):
         # Redirect to the EventDetailView for the event associated with the competition
         return reverse_lazy('event', kwargs={'pk': self.kwargs['event_id']})
+
+@permission_required("main.change_competition")
+def setup_competition_night(request, event_id):
+    '''Creat the standard set of competitions for a competition night
+    Colour or Mono Open for prints & digital plus set for prints and digital
+    Event id provided in url, subject and mono/colour in form'''
+
+    event = Event.objects.get(pk=event_id)
+
+    if request.method == 'POST':
+        form = CompetitionNightSetupForm(request.POST)
+        if form.is_valid():
+            colour_or_mono = form.cleaned_data['colour_or_mono']
+            set_subject = form.cleaned_data['set_subject']
+
+            if colour_or_mono == 'colour':
+                opencolourprint = CompetitionType.objects.get(active=True,
+                                                         type = 'Colour Open Print')
+                competition1 = Competition.objects.create(
+                        subject=Subject.objects.get(subject="Open"),
+                        open_for_entries=event.starts - timedelta(days = 90),
+                        entries_close=event.starts - timedelta(days = 8),
+                        judging_closes=event.ends - timedelta(hours = 1),
+                        type=opencolourprint,
+                        event=event
+                )
+                competition1.save()
+                
+                opencolourdigital = CompetitionType.objects.get(active=True,
+                                                         type = 'Colour Open Digital')
+                competition2 = Competition.objects.create(
+                        subject=Subject.objects.get(subject="Open"),
+                        open_for_entries=event.starts - timedelta(days = 90),
+                        entries_close=event.starts - timedelta(days = 8),
+                        judging_closes=event.ends - timedelta(days = 2),
+                        type=opencolourdigital,
+                        event=event
+                )
+                competition2.save()
+            else:
+                openmonoprint = CompetitionType.objects.get(active=True,
+                                                         type = 'Mono Open Print')
+                competition1 = Competition.objects.create(
+                        subject=Subject.objects.get(subject="Open"),
+                        open_for_entries=event.starts - timedelta(days = 90),
+                        entries_close=event.starts - timedelta(days = 8),
+                        judging_closes=event.ends - timedelta(hours = 1),
+                        type=openmonoprint,
+                        event=event
+                )
+                competition1.save()
+                
+                openmonodigital = CompetitionType.objects.get(active=True,
+                                                         type = 'Mono Open Digital')
+                competition2 = Competition.objects.create(
+                        subject=Subject.objects.get(subject="Open"),
+                        open_for_entries=event.starts - timedelta(days = 90),
+                        entries_close=event.starts - timedelta(days = 8),
+                        judging_closes=event.ends - timedelta(days = 2),
+                        type=openmonodigital,
+                        event=event
+                )
+                competition2.save()
+                
+            setprint = CompetitionType.objects.get(active=True,
+                                                         type = 'Set Print')
+            competition3 = Competition.objects.create(
+                    subject=set_subject[0],
+                    open_for_entries=event.starts - timedelta(days = 90),
+                    entries_close=event.starts - timedelta(days = 8),
+                    judging_closes=event.ends - timedelta(hours = 1),
+                    type=setprint,
+                    event=event
+            )
+            competition3.save()
+            
+            setdigital = CompetitionType.objects.get(active=True,
+                                                        type = 'Set Digital')
+            competition4 = Competition.objects.create(
+                    subject=set_subject[0],
+                    open_for_entries=event.starts - timedelta(days = 90),
+                    entries_close=event.starts - timedelta(days = 8),
+                    judging_closes=event.ends - timedelta(days = 2),
+                    type=setdigital,
+                    event=event
+            )
+            competition4.save()        
+                        
+            return redirect('event', event_id)  # Redirect to event detail page
+    else:
+        form = CompetitionNightSetupForm()
+
+    return render(request, 'main/setup_competition_night.html', {'form': form, 'event': event})
       
-class EnterCompetitionView(SuccessMessageMixin, CreateView):
+class EnterCompetitionView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     """This is the view for submitting a photo to a competition.
     It creates an Image object, if there is a photo uploaded the photo is validated 
     against the competition rules, where possible, the validation (and capitalisation
     of the title) happen in the ImageForm."""
+    login_url = "accounts/login/"
+    redirect_field_name = "redirect_to"
     model = Image  
     form_class = ImageForm
     template_name = 'main/image_upload_form.html'
@@ -172,6 +283,7 @@ class EnterCompetitionView(SuccessMessageMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super(EnterCompetitionView, self).get_form_kwargs()
         kwargs.update({'competition_id': self.kwargs['competition_id']})  # to pass id to form
+        print(f"Competition ID in view get_form_kwargs: {self.kwargs['competition_id']}")
         return kwargs
 
     # Validation of photo done in the form
@@ -187,7 +299,9 @@ class EnterCompetitionView(SuccessMessageMixin, CreateView):
         context['competition'] = Competition.objects.get(id=self.kwargs['competition_id'])
         return context
     
-class MemberVotingView(View):
+class MemberVotingView(LoginRequiredMixin, View):
+    login_url = "accounts/login/"
+    redirect_field_name = "redirect_to"
     template_name = 'member_voting.html'
 
     def get(self, request, competition_id):
@@ -240,6 +354,7 @@ class MemberVotingView(View):
         except (Competition.DoesNotExist, VoteOption.DoesNotExist):
             return redirect('events')
 
+@permission_required("main.change_competition")
 def count_votes(competition):
     # Get all the images for the given competition
     images = competition.images.all()
@@ -253,29 +368,64 @@ def count_votes(competition):
     # Sort images based on total points in descending order
     sorted_images = sorted(image_points.items(), key=lambda x: x[1], reverse=True)
 
-    # Assign awards to the top 6 scoring images
-    with transaction.atomic():
-        for rank, (image, points) in enumerate(sorted_images[:6], start=1):
-            # Create an Award instance for the image
-            if rank == 1:
-                awardtype = AwardType.objects.get(name = "1st")
-                award = Award.objects.create(image=image, type=awardtype, competition=competition)
-            elif rank == 2:
-                awardtype = AwardType.objects.get(name = "2nd")
-                award = Award.objects.create(image=image, type=awardtype, competition=competition)
-            elif rank == 3:
-                awardtype = AwardType.objects.get(name = "3rd")
-                award = Award.objects.create(image=image, type=awardtype, competition=competition)
-            elif rank == 4:
-                awardtype = AwardType.objects.get(name = "4th")
-                award = Award.objects.create(image=image, type=awardtype, competition=competition)
-            elif rank == 5:
-                awardtype = AwardType.objects.get(name = "5th")
-                award = Award.objects.create(image=image, type=awardtype, competition=competition)
-            elif rank == 6:
-                awardtype = AwardType.objects.get(name = "6th")
-                award = Award.objects.create(image=image, type=awardtype, competition=competition)
+    # Initialize variables to keep track of positions and tied counts
+    positions = {}
+    current_position = 1
+    tied_count = 0
+    previous_votes = None
+    
+    # Iterate through sorted items to assign positions
+    for index, (image, votes) in enumerate(sorted_images):
+        if votes != previous_votes:
+            # If the current number of votes is different from the previous one,
+            # update the current position and reset tied count
+            current_position += tied_count
+            tied_count = 0
+        if current_position <= 6:
+            # Assign position to the person
+            positions[image] = current_position
+        tied_count += 1
+        previous_votes = votes
+    
+        # Assign awards to the top 6 scoring images
+        # Create an Award instance for the images with positions
+    for image, position in positions.items():
+        if position == 1:
+            awardtype = AwardType.objects.get(name = "1st")
+            award = Award.objects.create(image=image, type=awardtype, competition=competition)
+        elif position == 2:
+            awardtype = AwardType.objects.get(name = "2nd")
+            award = Award.objects.create(image=image, type=awardtype, competition=competition)
+        elif position == 3:
+            awardtype = AwardType.objects.get(name = "3rd")
+            award = Award.objects.create(image=image, type=awardtype, competition=competition)
+        elif position == 4:
+            awardtype = AwardType.objects.get(name = "4th")
+            award = Award.objects.create(image=image, type=awardtype, competition=competition)
+        elif position == 5:
+            awardtype = AwardType.objects.get(name = "5th")
+            award = Award.objects.create(image=image, type=awardtype, competition=competition)
+        elif position == 6:
+            awardtype = AwardType.objects.get(name = "6th")
+            award = Award.objects.create(image=image, type=awardtype, competition=competition)
     return 
+
+class JudgeJudgingView(PermissionRequiredMixin, DetailView):
+    '''Slideshow and list of images in competition'''
+    permission_required = "main.change_competition"
+    model = Competition
+    template_name = 'main/judge_viewing.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Additional check to ensure that the judge is viewing their assigned competition
+        # also viewable by committee position holders (for debugging)
+        self.object = self.get_object()
+        position = Position.objects.filter(person = self.request.user.person)
+        if not position:
+            judge = self.request.user.person.judge
+            if judge != self.object.judge:
+                raise Http404("You are not authorized to view this competition.")
+        return super().dispatch(request, *args, **kwargs)
 
 class CompAwardsView(DetailView):
     '''This displays the images and awards for a competition.'''
@@ -287,6 +437,9 @@ class CompAwardsView(DetailView):
         context = super().get_context_data(**kwargs)
         context['images'] = Image.objects.filter(award__competition__id = self.kwargs['pk'],
                                                  award__type__display_award = True).distinct()
+        # if no images don't try to count votes or get awards
+        if not context['images']:
+            return context
         context['member_awards'] = Award.objects.filter(competition__id = self.kwargs['pk'],
                                                         type__awarded_by__members = True
                                                         ).order_by('-type__points')
@@ -306,28 +459,33 @@ class CompAwardsView(DetailView):
                                                         ).order_by('-type__points')
         return context
 
-class CompNightView(ListView):
+class CompNightView(PermissionRequiredMixin, ListView):
     '''List of comps on a night, this page will just be used to launch the full screen slideshows on 
     competition nights.
     Queryset is all competitions this month.'''
+    permission_required = "main.change_competition"
     model = Competition
     context_object_name = 'competitions'
     template_name = 'main/compnight.html'
     queryset = Competition.objects.filter(event__starts__month = datetime.now().month,
                                           event__starts__year = datetime.now().year )
 
-class CompNightImagesView(DetailView):
+class CompNightImagesView(PermissionRequiredMixin, DetailView):
     '''Slideshow of images in competition'''
+    permission_required = "main.change_competition"
     model = Competition
     template_name = 'main/slideshow.html'
     
-class CompNightJudgesView(DetailView):
+class CompNightJudgesView(PermissionRequiredMixin, DetailView):
     '''Slideshow of images in competition'''
+    permission_required = "main.change_competition"
     model = Competition
     template_name = 'main/judge_slideshow.html'
         
-class AddToGalleryView(SuccessMessageMixin, CreateView):
+class AddToGalleryView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     '''The view to upload to event galleries, similar to competition upload but without rules'''
+    login_url = "accounts/login/"
+    redirect_field_name = "redirect_to"
     model = Image  
     form_class = ImageForm
     template_name = 'main/image_upload_form.html'
@@ -357,8 +515,9 @@ class AddToGalleryView(SuccessMessageMixin, CreateView):
         context['gallery'] = Gallery.objects.get(id=self.kwargs['gallery_id'])
         return context
     
-class AnnualTotalsView(ListView):
+class AnnualTotalsView(PermissionRequiredMixin, ListView):
     '''This page lists all people who have entered competitions and total points by year.'''
+    permission_required = "main.change_competition"
     model = Person
     template_name = 'main/totals.html'
     
