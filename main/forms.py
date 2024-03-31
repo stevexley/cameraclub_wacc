@@ -6,6 +6,19 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from .models import Image, Competition, Subject, CompetitionType, Judge, Event
 from .utils import setTitleCase, checkWidth, checkHeight, checkOneEntry, checkMono
 
+class EventUploadForm(forms.ModelForm):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+            visible.field.widget.attrs['placeholder'] = visible.field.label
+            visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
+    
+    class Meta:
+        model = Event
+        fields = [ 'description', 'file', ]
+
 class ImageForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):

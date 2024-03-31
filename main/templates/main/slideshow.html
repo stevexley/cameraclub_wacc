@@ -19,7 +19,11 @@
                 {% if forloop.first %}
                 <div class="carousel-item active">
                     <div class="d-flex align-items-center justify-content-center min-vh-100">
-                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}">
+                        {% if image.photo %}
+                        <img src="{{ image.photo.url }}" alt="{{ image.title }}">
+                        {% else %}
+                        <img src="{{ image.photo }}" alt="{{ image.title }}">
+                        {% endif %}
                         <div class="carousel-caption badge rounded-pill bg-secondary bg-opacity-50 d-md-block">
                             <h2>{{ image.title }}</h2>
                         </div>
@@ -27,13 +31,21 @@
                 </div>
                 <div class="carousel-item">
                     <div class="d-flex align-items-center justify-content-center min-vh-100">
-                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}">
+                        {% if image.photo %}
+                        <img src="{{ image.photo.url }}" alt="{{ image.title }}">
+                        {% else %}
+                        <img src="{{ image.photo }}" alt="{{ image.title }}">
+                        {% endif %}
                     </div>
                 </div>
                 {% else %}
                 <div class="carousel-item">
                     <div class="d-flex align-items-center justify-content-center min-vh-100">
-                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}">
+                        {% if image.photo %}
+                        <img src="{{ image.photo.url }}" alt="{{ image.title }}">
+                        {% else %}
+                        <img src="{{ image.photo }}" alt="{{ image.title }}">
+                        {% endif %}
                         <div class="carousel-caption badge rounded-pill bg-secondary bg-opacity-50 d-md-block">
                             <h2>{{ image.title }}</h2>
                         </div>
@@ -41,7 +53,11 @@
                 </div>
                 <div class="carousel-item">
                     <div class="d-flex align-items-center justify-content-center min-vh-100">
-                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}">
+                        {% if image.photo %}
+                        <img src="{{ image.photo.url }}" alt="{{ image.title }}">
+                        {% else %}
+                        <img src="{{ image.photo }}" alt="{{ image.title }}">
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}

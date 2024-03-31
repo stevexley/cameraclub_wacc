@@ -28,10 +28,11 @@
         <div id="carouselControls" class="carousel slide">
             <div class="carousel-inner">
                 {% for image in competition.images.all %}
+                {% if image.photo %}
                 {% if forloop.first %}
                 <div class="carousel-item active" data-image-id={{ image.id }}>
                     <div class="d-flex align-items-center justify-content-center min-vh-100">
-                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}" >
+                        <img src="{{ image.photo.url }}" alt="{{ image.title }}" >
                         <div class="carousel-caption badge rounded-pill bg-secondary bg-opacity-50 d-md-block">
                             <h2>{{ image.title }}</h2>
                         </div>
@@ -40,13 +41,14 @@
                 {% else %}
                 <div class="carousel-item" data-image-id={{ image.id }}>
                     <div class="d-flex align-items-center justify-content-center min-vh-100">
-                        <img src="/media/{{ image.photo }}" alt="{{ image.title }}" data-image-id={{ image.id }}>
+                        <img src="{{ image.photo.url }}" alt="{{ image.title }}" data-image-id={{ image.id }}>
                         <div class="carousel-caption badge rounded-pill bg-secondary bg-opacity-50 d-md-block">
                             <h2>{{ image.title }}</h2>
                         </div>
                         
                     </div>
                 </div>
+                {% endif %}
                 {% endif %}
                 {% endfor %}
             </div>

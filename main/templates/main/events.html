@@ -94,8 +94,9 @@
         {% else %}
             {% if todays_month > 9 %}
             {% if user.person.position == 'Webmaster' %}
-
+            <div class="d-grid gap-2">
                 <a class="btn btn-primary" href="{% url 'create-events' %}">Create All Next Year's Events</a>
+            </div>
             {% endif %}
             {% endif %}
         {% endif %}

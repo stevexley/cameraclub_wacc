@@ -24,7 +24,7 @@ class Person(models.Model):
     id = models.AutoField(primary_key=True)
     firstname = models.CharField(max_length=50)
     surname = models.CharField(max_length=50)
-    mobile = models.CharField(max_length=50)
+    mobile = models.CharField(max_length=50, null=True, blank=True)
     user = models.OneToOneField(User, null=True, blank=True, on_delete=models.PROTECT)
     
     def __str__(self):
@@ -139,8 +139,12 @@ class Event(models.Model):
     ends = models.DateTimeField()
     file = models.FileField(upload_to='files/', null=True, blank=True)
     
+    def extension(self):
+        name, extension = os.path.splitext(self.file.name)
+        return extension
+    
     def __str__(self):
-        return self.name + " (" + str(self.starts.date()) + ")"
+        return self.name + " (" + self.starts.strftime("%m/%d/%Y") + ")"
     
     class Meta:
         ordering = ['starts']
@@ -161,7 +165,7 @@ class CompetitionType(models.Model):
     '''A Competition is a collection of images for a club Competition'''
     id = models.AutoField(primary_key=True)
     type = models.CharField(max_length=50)
-    rules = models.ManyToManyField(Rule)
+    rules = models.ManyToManyField(Rule, blank=True)
     active = models.BooleanField(default=True)
     contributes_to_annual = models.BooleanField(default=True)
     selection_not_places = models.BooleanField(default=False)

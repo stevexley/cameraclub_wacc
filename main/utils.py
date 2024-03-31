@@ -8,7 +8,7 @@ from PIL import Image
 from nltk.corpus import stopwords
 from itertools import chain
 from datetime import datetime, timedelta
-from .models import Event, Competition, Award, Image
+from .models import Event, CompetitionType, Award, Image, Rule
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import HttpResponse
 from django.contrib import messages
@@ -174,16 +174,17 @@ def move_imported_events(request):
     listed as the 1st of the month.  That data has been used 
     to create all the past events so the dates are wrong.'''
     # from 2011 to 2022
-    for year in range(2011,2023):
-        for month in range(1,12):
-            old_date = (year, month, 1)
-            compdate = nth_weekday(old_date, 3, 0)
-            start_time = datetime.strptime("19:30", "%H:%M").time()
-            end_time = datetime.strptime("21:30", "%H:%M").time()
-            start_datetime = datetime.combine(compdate, start_time)
-            end_datetime = datetime.combine(compdate, end_time)
-            events = Event.objects.filter(starts__year = year, starts__month = month)
-            events.update(starts=start_datetime, ends=end_datetime)
+    #for year in range(2011,2024):
+    year = 2024
+    for month in range(1,12):
+        old_date = (year, month, 1)
+        compdate = nth_weekday(old_date, 3, 0)
+        start_time = datetime.strptime("19:30", "%H:%M").time()
+        end_time = datetime.strptime("21:30", "%H:%M").time()
+        start_datetime = datetime.combine(compdate, start_time)
+        end_datetime = datetime.combine(compdate, end_time)
+        events = Event.objects.filter(starts__year = year, starts__month = month, name__icontains = "Competition")
+        events.update(starts=start_datetime, ends=end_datetime)
             
     return HttpResponse("Competition Dates Fixed")
 
@@ -192,14 +193,14 @@ def move_comps_to_1st(request):
     listed as the 1st of the month.  To easy import of that 
     data set all events and comp dates to 1st of month.'''
 
-    comps = Competition.objects.all()
-    for comp in comps:
-        compevent = comp.event
-        daynum = compevent.starts.day - 1
-        firstdate = compevent.starts + timedelta(days=(-1 * daynum))
-        compevent.starts = firstdate
-        compevent.ends = firstdate
-        compevent.save()
+    compevents = Event.objects.filter(name__icontains = "Competition")
+    for event in compevents:
+        year = event.starts.year
+        month = event.starts.month
+        starts = datetime(year, month, 1, 19, 30)
+        ends = datetime(year, month, 1, 21, 30)
+        events = Event.objects.filter(starts__year = year, starts__month = month, name__icontains = "Competition")
+        events.update(starts=starts, ends=ends)
             
     return HttpResponse("Competition Dates Set to 1st")
 
@@ -236,11 +237,11 @@ def award_bronze(request, comp_pk, image_pk):
 def import_pics(request):
     '''Loop through images, find files in media directory that match author name and title
     add matching filename as photo.'''
-    images = Image.objects.filter(photo='')
+    images = Image.objects.filter(photo=None)
     directory = settings.PHOTOS_ROOT
     for img in images:
         title = img.title.lower()
-        name = img.author.firstname.lower() + img.author.surname.lower()
+        name = img.author.firstname.lower() + "_" + img.author.surname.lower()
         for pic in os.listdir(directory):
             FileName = os.fsdecode(pic)
             filename = FileName.lower()
@@ -263,4 +264,3 @@ def cleanup_photos(request):
     for img in images:
         img.photo = None
         img.save()
-         

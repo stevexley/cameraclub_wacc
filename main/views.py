@@ -10,13 +10,13 @@ from django.views import View
 from django.views.generic.list import ListView
 from django.views.generic.dates import YearArchiveView
 from django.views.generic.detail import DetailView
-from django.views.generic import CreateView
+from django.views.generic import CreateView, UpdateView
 from django.db.models import Sum, Max
 from django.db import transaction
 
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
     Gallery, VoteOption, Vote, Award, AwardType, Subject, Position
-from .forms import ImageForm, CompForm, CompetitionNightSetupForm
+from .forms import EventUploadForm, ImageForm, CompForm, CompetitionNightSetupForm
 from datetime import datetime, timedelta
 import subprocess
 
@@ -28,7 +28,9 @@ class ProfileView(PermissionRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         person = context['member'].person
-        context["images"] = Image.objects.exclude(photo='').filter(author = person )
+        context["images"] = Image.objects.filter(author = person,
+                                                 photo__icontains = 'photo'
+                                                 ).order_by('-competitions__judging_closes')
         return context
     
     
@@ -57,7 +59,7 @@ class MainGalleryView(ListView):
     #annotate needed to prevent image duplicates
     #exclude image objects with no image file
     def get_queryset(self):
-        images = Image.objects.exclude(photo='').filter(
+        images = Image.objects.filter(photo__icontains = 'photo',
             award__type__display_award=True
         ).annotate(max_end=Max('competitions__judging_closes')).order_by("-max_end")[:200]
         
@@ -66,7 +68,7 @@ class MainGalleryView(ListView):
 class AboutUsView(View):
     '''This view just selects the Blub object that contains
     the HTML of the About Us page.  This allows for easy 
-    editing of the page from teh admin pages without having
+    editing of the page from the admin pages without having
     to touch the code.'''
     template_name = 'main/about_us.html'
     
@@ -145,6 +147,16 @@ class EventDetailView(DetailView):
         context['user'] = self.request.user
         return context
     
+class UploadEventFileView(PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
+    """This is the view for uploading a file to an event.
+    """
+    permission_required = "main.change_event"
+    model = Event  
+    form_class = EventUploadForm
+    template_name = 'main/event_upload_form.html'
+    success_url = '/events/' + str(datetime.now().year) + '#today_bookmark'
+    success_message = "File Uploaded"
+
 class CompCreateView(PermissionRequiredMixin, CreateView):
     model = Competition
     permission_required = "main.change_competition"

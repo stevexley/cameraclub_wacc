@@ -1,4 +1,5 @@
 {% extends 'main/base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container">
@@ -109,24 +110,48 @@
             {% endfor %}
         {% endif %}
         {% if event.file %}
-            {% comment %} {% with file_extension=event.file.url|split_dot|last|lower %}
-                {% if file_extension in ['jpg', 'jpeg', 'png', 'gif'] %}
+            {% if 'jpg' in event.extension %}
                 <img class="img-thumbnail" src="{{ event.file.url }}" alt="Click to View">
-                {% elif file_extension in ['pdf'] %}
-                <!-- Render a PDF icon or thumbnail image -->
-                {% elif file_extension in ['doc', 'docx'] %}
-                <!-- Render a Word document icon or thumbnail image -->
-                {% else %}
-                <!-- Render a generic file icon or message for unsupported file types -->
-                {% endif %}
-            {% endwith %} {% endcomment %}
-        {% else %}
-        <!-- "Add permissions here - Committee Only" -->
-        <a class="btn btn-primary mt-1" href="#">Upload Flyer</a>
+            {% elif 'pdf' in event.extension %}
+                <div id="pdf-viewer" class="embed-responsive"></div>
+            {% elif 'docx' in event.extension %}
+            <!-- Render a Word document icon or thumbnail image -->
+            {% endif %}
+        {% endif %}
+        {% if perms.main.change_event %}
+        <a class="btn btn-primary mt-1" href="{% url 'event_add_file' event.id %}">Edit Event Details</a>
         {% endif %}
     </div>
 </div>    
 {% endblock %}
 
 {% block scripts %}
+{% if event.file %}
+<script type="module">
+    import { GlobalWorkerOptions, getDocument } from '{% static 'pdfjs/build/pdf.mjs' %}';
+
+    // URL of the PDF file
+    var pdfUrl = "{{ event.file.url }}";
+
+    // Set the path to the worker script
+    GlobalWorkerOptions.workerSrc = '{% static 'pdfjs/build/pdf.worker.mjs' %}';
+
+    getDocument(pdfUrl).promise.then(function(pdf) {
+        pdf.getPage(1).then(function(page) {
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
+            var viewport = page.getViewport({ scale: 1 });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            var renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+            page.render(renderContext);
+            document.getElementById('pdf-viewer').appendChild(canvas);
+        });
+    });
+</script>
+{% endif %}
 {% endblock %}
