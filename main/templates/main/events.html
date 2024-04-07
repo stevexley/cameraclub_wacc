@@ -3,11 +3,21 @@
 {% block content %}
 <div class="container">
     <div class="col">
-    <h1>Events for {{ year.year }}</h1>
-    <div class="d-grid gap-2 mb-3">
-        {% if previous_year %}
-          <a class="btn btn-primary" href="{% url 'events' year=previous_year %}">{{ previous_year }}</a>
-        {% endif %}
+    
+    <div class="row justify-content-between mb-3">
+        <div class="col">
+            {% if previous_year %}
+            <a class="btn btn-primary" href="{% url 'events' year=previous_year %}">{{ previous_year }}</a>
+            {% endif %}
+        </div>
+            <div class="col">
+            <h1>Events for {{ year.year }}</h1>
+            </div>
+        <div class="col">
+            {% if next_year %}
+                <a class="btn btn-primary float-end" href="{% url 'events' year=next_year %}">{{ next_year }}</a>
+            {% endif %}
+        </div>
     </div>
     {% now "Y-m-d" as todays_date %}
     {% now "m" as todays_month %}
@@ -87,17 +97,11 @@
     </div>
     {% endfor %}
     <div>
-        {% if next_year %}
-        <div class="d-grid gap-2">
-            <a class="btn btn-primary" href="{% url 'events' year=next_year %}">{{ next_year }}</a>
-        </div>
-        {% else %}
-            {% if todays_month > 9 %}
+        {% if todays_month > 9 %}
             {% if user.person.position == 'Webmaster' %}
             <div class="d-grid gap-2">
                 <a class="btn btn-primary" href="{% url 'create-events' %}">Create All Next Year's Events</a>
             </div>
-            {% endif %}
             {% endif %}
         {% endif %}
     </div>

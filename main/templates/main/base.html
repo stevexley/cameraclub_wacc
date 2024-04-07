@@ -18,7 +18,7 @@
     {% now "Y" as this_year %}
     <div class="container-fluid">
         {% block navbar %}
-        <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
+      <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'main-gallery' %}">
               <img src="{% static "WACC_icon.png" %}" class="d-inline-block align-text-middle"> West Australian Camera Club</a>
@@ -48,16 +48,16 @@
                 </li>
             </ul>
             </div>
+            <div class="d-flex">
+              {% if user.is_authenticated %}
+                <a class="btn btn-primary mx-2 text-nowrap" href="{% url 'profile' user.person.member.id %}">Hi {{ user.person.firstname }}</a>
+                <a class="btn btn-secondary" href="{% url 'logout' %}?next={{ request.path }}">Logout</a>
+              {% else %}
+                <a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path }}">Login</a>
+              {% endif %}
+            </div>
         </div>
-        <div class="d-flex">
-          {% if user.is_authenticated %}
-            <a class="btn btn-primary mx-2 text-nowrap" href="{% url 'profile' user.person.member.id %}">Hi {{ user.person.firstname }}</a>
-            <a class="btn btn-secondary" href="{% url 'logout' %}?next={{ request.path }}">Logout</a>
-          {% else %}
-            <a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path }}">Login</a>
-          {% endif %}
-        </div>
-        </nav>
+      </nav>
         {% endblock %}
         {% if messages %}
           <div id="message-container">
@@ -81,7 +81,7 @@
         {% endif %}
 
         <div class="row pt-5 my-5">
-          <div class="col">{% block content %}{% endblock %}</div>
+          <div class="col pt-5 lg-pt-0">{% block content %}{% endblock %}</div>
           <div class="container my-3">
             <div class="d-flex justify-content-center fixed-bottom bg-white pt-1">
             <p class="text-center">All images displayed on this site are copyright of WA Camera Club members and may not be
@@ -94,10 +94,42 @@
     <script src={% static 'js/bootstrap.bundle.min.js' %}></script>
     <script>
       // Auto-dismiss messages after 5 seconds
-      $(document).ready(function() {
+      document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
-          $('#message-container').fadeOut();
-        }, 5000);
+            var messageContainer = document.getElementById('message-container');
+            if (messageContainer) {
+                messageContainer.style.opacity = '0';
+                setTimeout(function() {
+                    messageContainer.style.display = 'none';
+                }, 1000); // Fade out duration
+            }
+        }, 5000); // Auto-dismiss duration
+      });
+      // Attach event listener to window for clicks
+        window.addEventListener('click', function(event) {
+          var target = event.target;
+
+          // close the modal
+          var modal = document.querySelector('.modal.show');
+          if (modal) {
+              var modalInstance = bootstrap.Modal.getInstance(modal);
+              if (modalInstance) {
+                  modalInstance.hide(); // Close the modal
+              }
+          }
+        });
+      // Attach event listener to window for contextmenu (right-click) events
+      window.addEventListener('contextmenu', function(event) {
+        // Prevent the default behavior of the context menu (i.e., block it from opening)
+        event.preventDefault();
+        // Check if the modal is open
+        var modal = document.querySelector('.modal.show');
+        if (modal) {
+            var modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide(); // Close the modal
+            }
+        }
       });
     </script>
     {% block scripts %}{% endblock %}

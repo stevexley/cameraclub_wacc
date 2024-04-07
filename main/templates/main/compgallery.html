@@ -3,30 +3,43 @@
   <div class="container">
     <div class="row">
       <h2>{{ competition.event.name }}</h1>
-      <div class="d-grid gap-2 d-md-block">
-        {% for comp in competition.event.competition_set.all %}
-        <a class="btn btn-primary" href="{% url 'competition_awards' comp.id %}" role="button">
-          {% if 'Open' in comp.type.type %}
-          {{ comp.type }}
+        <div class="d-grid gap-2 d-md-block">
+          {% for comp in competition.event.competition_set.all %}
+          <a class="btn btn-primary" href="{% url 'competition_awards' comp.id %}" role="button">
+            {% if 'Open' in comp.type.type %}
+            {{ comp.type }}
+            {% else%}
+            {{ comp.type }} - {{ comp.subject }}
+            {% endif %}
+          </a>
+          {% endfor %}
+        </div>
+        <h1 class="mt-3">{% if 'Open' in competition.type.type %}
+          <li class="list-group-item">{{ competition.type }}</li>
           {% else%}
-          {{ comp.type }} - {{ comp.subject }}
+          <li class="list-group-item">{{ competition.type }} - {{ competition.subject }}</li>
           {% endif %}
-        </a>
-        {% endfor %}
-      </div>
-      <h1 class="mt-3">{% if 'Open' in competition.type.type %}
-        <li class="list-group-item">{{ competition.type }}</li>
-        {% else%}
-        <li class="list-group-item">{{ competition.type }} - {{ competition.subject }}</li>
+        </h1>
+        {% if images %}
+        <h3>Awarded Images<h4>
+          <div class="col">
+            <ul class="image-gallery">
+              {% for image in images %}
+                {% if image.photo %}
+                {% include "main/includes/gallery_items.html" %}
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </div>
         {% endif %}
-      </h1>
+
       <div class="row">
         {% if judge_awards.all %}
         <h3>Judge's Awards<h4>
           {% if competition.judge %}
           <h4>Awarded by {{ competition.judge }}
           {% endif %}
-        <table class="table table-hover">
+        <table class="table table-hover wacc-table">
           <thead>
             <th scope="col">Award</th>
             <th scope="col">Image Name</th>
@@ -47,7 +60,7 @@
         {% endif %}
         {% if member_awards.all %}
         <h3>Member's Awards<h4>
-          <table class="table table-hover">
+          <table class="table table-hover wacc-table">
             <thead>
               <th scope="col">Award</th>
               <th scope="col">Image Name</th>
@@ -68,16 +81,4 @@
         {% endif %}
       </div>
     </div>
-    {% if images %}
-    <h3>Awarded Images<h4>
-      <div class="col">
-        <ul class="image-gallery">
-          {% for image in images %}
-            {% if image.photo %}
-            {% include "main/includes/gallery_items.html" %}
-            {% endif %}
-          {% endfor %}
-        </ul>
-      </div>
-    {% endif %}
 {% endblock %}
