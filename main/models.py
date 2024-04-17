@@ -1,10 +1,15 @@
 import os
+from datetime import datetime 
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_delete
 from django.core.files.storage import default_storage
+from django.conf import settings
 from tinymce.models import HTMLField
 from django.db.models import ImageField
+from django.dispatch import receiver
+from pdf2image import convert_from_path
+from PIL import Image
 
 # Create your models here.
 
@@ -16,6 +21,37 @@ class Blurb(models.Model):
     
     def __str__(self):
         return self.name
+
+def generate_thumbnail(pdf_path, thumb_path, size=(200, 300)):
+    # Convert the first page of the PDF file to an image
+    images = convert_from_path(pdf_path)
+    if images:
+        first_page_image = images[0]
+        # Resize the image
+        resized_image = first_page_image.resize(size)
+        # Save the resized image as a thumbnail
+        resized_image.save(thumb_path, 'PNG')
+
+class Newsletter(models.Model):
+    '''Club Newsletters (issued monthly)'''
+    id = models.AutoField(primary_key=True)
+    issue_date = models.DateTimeField(default=datetime.now())
+    file = models.FileField(upload_to='files/news/')
+    thumb = models.ImageField(upload_to='files/news/thum', blank=True, null=True)
+    
+    def __str__(self):
+        return "Newsletter: " + self.issue_date.strftime("%d/%m/%Y")
+
+@receiver(models.signals.post_save, sender=Newsletter)
+def make_thumbnail(sender, instance, **kwargs):
+    if instance.thumb:
+        return
+    if instance.file:
+        pdf_path = instance.file.path
+        thumb_path = os.path.join(os.path.dirname(pdf_path), 'thumbnails', f"{instance.id}.png")
+        generate_thumbnail(pdf_path, thumb_path)
+        instance.thumb = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
+        instance.save(update_fields=['thumb'])
 
 class Person(models.Model):
     '''The person model that contains contact details for a person.

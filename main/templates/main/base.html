@@ -18,7 +18,7 @@
     {% now "Y" as this_year %}
     <div class="container-fluid">
         {% block navbar %}
-      <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'main-gallery' %}">
               <img src="{% static "WACC_icon.png" %}" class="d-inline-block align-text-middle"> West Australian Camera Club</a>
@@ -36,6 +36,10 @@
                 <li class="nav-item">
                   <a class="nav-link" href="{% url 'events' this_year %}#today_bookmark">Events Calendar</a>
                 </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'news' this_year %}">Newsletters</a>
+                </li>
+                {% if perms.main.change_event %}
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     Committee Only
@@ -46,14 +50,15 @@
                     <li><a class="dropdown-item" href="{% url 'members' %}">Members</a></li>
                 </ul>
                 </li>
+                {% endif %}
             </ul>
             </div>
             <div class="d-flex">
               {% if user.is_authenticated %}
-                <a class="btn btn-primary mx-2 text-nowrap" href="{% url 'profile' user.person.member.id %}">Hi {{ user.person.firstname }}</a>
+                <a class="btn btn--outline-primary mx-2 text-nowrap" href="{% url 'profile' user.person.member.id %}">Hi {{ user.person.firstname }}</a>
                 <a class="btn btn-secondary" href="{% url 'logout' %}?next={{ request.path }}">Logout</a>
               {% else %}
-                <a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path }}">Login</a>
+                <a class="btn btn-outline-primary" href="{% url 'login' %}?next={{ request.path }}">Login</a>
               {% endif %}
             </div>
         </div>
@@ -80,8 +85,8 @@
           </div>
         {% endif %}
 
-        <div class="row pt-5 my-5">
-          <div class="col pt-5 lg-pt-0">{% block content %}{% endblock %}</div>
+        <div class="container-fluid pt-5 my-5">
+          <div class="pt-5 lg-pt-0">{% block content %}{% endblock %}</div>
           <div class="container my-3">
             <div class="d-flex justify-content-center fixed-bottom bg-white pt-1">
             <p class="text-center">All images displayed on this site are copyright of WA Camera Club members and may not be

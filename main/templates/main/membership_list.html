@@ -2,10 +2,9 @@
 
 {% block content %}
 <div class="container">
-    <div class="col">
-    <h1>Committee Members</h1>
+        <h1>Committee Members</h1>
     <div class="row">
-        <ul class="list-group">
+        <ul class="d-flex list-group">
             {% for user in committee %}
                 <li class="list-group-item">
                     <div class="row align-items-start">
@@ -23,7 +22,7 @@
     </div>
     <h1 class="mt-5">Current Members</h1>
     <div class="row">
-        <ul class="list-group">
+        <ul class="d-flex list-group">
             {% for member in members %}
             {% if member.current %}
                 <li class="list-group-item">

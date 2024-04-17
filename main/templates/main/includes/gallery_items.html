@@ -1,3 +1,4 @@
+{% if image.photo %}
 <li>
   <img src="{{ image.photo.url }}" alt="{{ image.title }}">
   <div class="overlay">
@@ -18,8 +19,8 @@
   <a class="divLink" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}"></a> 
 </li>
 <!-- Modal for the image -->
-<div class="modal fade" id="imageModal{{ image.id }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade " id="imageModal{{ image.id }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content modal-content-centrered">
             <div class="wacc-modal-body">
                 <img src="{{ image.photo.url }}" alt="{{ image.title }}">
@@ -27,3 +28,4 @@
         </div>
     </div>
 </div>
+{% endif %}

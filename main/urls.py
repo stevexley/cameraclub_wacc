@@ -2,7 +2,7 @@ from django.urls import path, include
 from .views import MainGalleryView, EventsView, EventDetailView, EnterCompetitionView, ProfileView, \
     MemberListView, AboutUsView, AddToGalleryView, MemberVotingView, CompAwardsView, AnnualTotalsView, \
     CompNightView, CompNightImagesView, CompNightJudgesView, CompCreateView, JudgeJudgingView, UploadEventFileView, \
-    setup_competition_night
+    NewslettersView, setup_competition_night
 from .utils import createwaccevents, move_imported_events, move_comps_to_1st, award_gold, award_silver, award_bronze, import_pics, cleanup_photos
 from django.conf import settings
 from django.conf.urls.static import static
@@ -13,6 +13,7 @@ urlpatterns = [
     path('members', MemberListView.as_view(), name='members'),
     path('', MainGalleryView.as_view(), name = 'main-gallery'),
     path('aboutus', AboutUsView.as_view(), name='aboutus'),
+    path('newsletters/<int:year>/', NewslettersView.as_view(), name='news'),
     path('profile/<int:pk>', ProfileView.as_view(), name='profile'),
     path('events/<int:year>/', EventsView.as_view(), name='events'),
     path('events/', EventsView.as_view(), name='events'),

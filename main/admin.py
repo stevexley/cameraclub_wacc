@@ -8,6 +8,8 @@ admin.site.site_header = "WACC Site Admin"
     
 admin.site.register(Blurb)
 
+admin.site.register(Newsletter)
+
 admin.site.register(Person)    
 
 @admin.register(Member)

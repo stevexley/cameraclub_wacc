@@ -1,0 +1,44 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container">
+<div class="col">
+    
+    <div class="row justify-content-between mb-3">
+        <div class="col-2">
+            {% if previous_year %}
+            <a class="btn btn-primary" href="{% url 'news' year=previous_year %}">{{ previous_year }}</a>
+            {% endif %}
+        </div>
+            <div class="col text-center">
+            <h1>Newsletters from {{ year.year }}</h1>
+            </div>
+        <div class="col-2">
+            {% if next_year %}
+                <a class="btn btn-primary float-end" href="{% url 'news' year=next_year %}">{{ next_year }}</a>
+            {% endif %}
+        </div>
+    </div>
+    {% if newsletters %}
+    <div class="d-flex flex-wrap">
+    {% for letter in newsletters %}
+         {% comment %} Open pdf in new tab {% endcomment %}
+        <div class="d-flex align-items-start flex-column m-3 ">
+            {% if user.is_authenticated %}
+            <a href="{{ letter.file.url }}" target=”_blank”>
+                {% comment %} show thumbnail {% endcomment %}
+                <img src="{{ letter.thumb.url }}" alt={{ letter.issue_date|date:"F"}} {{ letter.issue_date|date:"Y" }}>
+            </a>
+            {% else %}
+            <img src="{{ letter.thumb.url }}" alt={{ letter.issue_date|date:"F"}} {{ letter.issue_date|date:"Y" }}>
+            <div>
+            {{ letter.issue_date|date:"F"}} {{ letter.issue_date|date:"Y" }}
+            </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}

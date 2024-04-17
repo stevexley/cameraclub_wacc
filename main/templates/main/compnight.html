@@ -10,9 +10,9 @@
         {% endif %}
           {% if 'rint' in comp.type.type %}
           {% else %}
-          <a class="badge rounded-pill bg-primary fs-5" href="{% url 'slideshow' comp.id %}" >{{ comp.type }} Preview</a><br/>
+          <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'slideshow' comp.id %}" >{{ comp.type }} Preview</a><br/>
           {% endif %}
-          <a class="badge rounded-pill bg-primary fs-5" href="{% url 'judge_slideshow' comp.id %}" >{{ comp.type }} Judge's Comments</a><br/>
+          <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'judge_slideshow' comp.id %}" >{{ comp.type }} Judge's Comments</a><br/>
         {% endfor %}
         </div>
       </div>

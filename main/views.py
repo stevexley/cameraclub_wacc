@@ -15,7 +15,7 @@ from django.db.models import Sum, Max
 from django.db import transaction
 
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
-    Gallery, VoteOption, Vote, Award, AwardType, Subject, Position
+    Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter
 from .forms import EventUploadForm, ImageForm, CompForm, CompetitionNightSetupForm
 from datetime import datetime, timedelta
 import subprocess
@@ -79,7 +79,40 @@ class AboutUsView(View):
         else:
             # Handle the case when the object is not found (e.g., return an error page)
             return render(request, 'main/error.html')
+ 
+class NewslettersView(YearArchiveView):
+    '''This page shows the club newsletters by year'''
+    model = Newsletter
+    date_field = 'issue_date'
+    make_object_list = True
+    context_object_name = 'newsletters'
+    template_name = 'main/news.html'
     
+    def get_year(self):
+        """Return the year for which this view should display data.
+        year can be set in the url, if not set it defaults to this year"""
+        year = self.year
+        if year is None:
+            try:
+                year = self.kwargs["year"]
+            except:
+                year = datetime.now().year
+        return year
+    
+    def get_queryset(self):
+        year = self.get_year()
+        return Newsletter.objects.filter(issue_date__year=year).order_by('issue_date')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        year = self.get_year()
+        context['next_year'] = None
+        context['previous_year'] = None
+        if Newsletter.objects.filter(issue_date__year=(year - 1)):
+            context['previous_year'] = year - 1
+        if Newsletter.objects.filter(issue_date__year=(year + 1)):
+            context['next_year'] = year + 1
+        return context
 
 class EventsView(YearArchiveView):
     '''This page lists all open events with the competitions
@@ -155,7 +188,7 @@ class UploadEventFileView(PermissionRequiredMixin, SuccessMessageMixin, UpdateVi
     form_class = EventUploadForm
     template_name = 'main/event_upload_form.html'
     success_url = '/events/' + str(datetime.now().year) + '#today_bookmark'
-    success_message = "File Uploaded"
+    success_message = "Event Updated"
 
 class CompCreateView(PermissionRequiredMixin, CreateView):
     model = Competition
