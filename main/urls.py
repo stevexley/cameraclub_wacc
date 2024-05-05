@@ -1,8 +1,5 @@
 from django.urls import path, include
-from .views import MainGalleryView, EventsView, EventDetailView, EnterCompetitionView, ProfileView, \
-    MemberListView, AboutUsView, AddToGalleryView, MemberVotingView, CompAwardsView, AnnualTotalsView, \
-    CompNightView, CompNightImagesView, CompNightJudgesView, CompCreateView, JudgeJudgingView, UploadEventFileView, \
-    NewslettersView, setup_competition_night
+from .views import *
 from .utils import createwaccevents, move_imported_events, move_comps_to_1st, award_gold, award_silver, award_bronze, import_pics, cleanup_photos
 from django.conf import settings
 from django.conf.urls.static import static
@@ -29,14 +26,18 @@ urlpatterns = [
     path('competitions/<int:comp_pk>/award_gold/<image_pk>', award_gold, name='award_gold'),
     path('competitions/<int:comp_pk>/award_silver/<image_pk>', award_silver, name='award_silver'),
     path('competitions/<int:comp_pk>/award_bronze/<image_pk>', award_bronze, name='award_bronze'),
-    path('competitions/<int:competition_id>/enter/', EnterCompetitionView.as_view(), name='enter_competition'),
+    path('competitions/<int:pk>/enter/', EnterCompetitionView.as_view(), name='enter_competition'),
     path('competitions/<int:competition_id>/vote/', MemberVotingView.as_view(), name='competition_vote'),
+    path('competitions/<int:pk>/addimages/', AddImagesToCompetitionView.as_view(), name='competition_add_images'),
     path('competitions/<int:pk>/judge/', JudgeJudgingView.as_view(), name='competition_judge'),
     path('competitions/<int:pk>/awards/', CompAwardsView.as_view(), name='competition_awards'),
     path('competitions/<int:year>/totals/', AnnualTotalsView.as_view(), name='totals'),
     path('competitions/night/' , CompNightView.as_view(), name='compnight'),
     path('competitions/<int:pk>/slideshow/', CompNightImagesView.as_view(), name='slideshow'),
     path('competitions/<int:pk>/judge_slideshow/', CompNightJudgesView.as_view(), name='judge_slideshow'),
+    path('competitions/<int:pk>/edit_judge_awards/', JudgeAwardUpdateView.as_view(), name='edit_judge_awards'),
+    path('competitions/<int:pk>/edit_member_awards/', MemberAwardUpdateView.as_view(), name='edit_member_awards'),
+    path('images/<int:pk>/addphoto', UploadPhotoView.as_view(), name='upload_photo'),
     path('add-to-gallery/<int:gallery_id>', AddToGalleryView.as_view(), name='add_to_gallery'),
     
 #    path('image', views.image, name='image')

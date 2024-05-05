@@ -5,7 +5,7 @@
   <head>
     {% block title %}
       <title>WACC</title>
-    {% endblock %}
+    {% endblock title %}
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {% load static %}
@@ -17,16 +17,24 @@
   <body>
     {% now "Y" as this_year %}
     <div class="container-fluid">
-        {% block navbar %}
-      <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
-        <div class="container-fluid">
+      {% block navbar %}
+        <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+          <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'main-gallery' %}">
-              <img src="{% static "WACC_icon.png" %}" class="d-inline-block align-text-middle"> West Australian Camera Club</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+              <img src="{% static "WACC_icon.png" %}"
+                   class="d-inline-block align-text-middle">
+            West Australian Camera Club</a>
+            <button class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarNavDropdown"
+                    aria-controls="navbarNavDropdown"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNavDropdown">
-            <ul class="navbar-nav">
+              <ul class="navbar-nav">
                 <li class="nav-item">
                   <a class="nav-link" aria-current="page" href="{% url 'main-gallery' %}">Home</a>
                 </li>
@@ -40,94 +48,105 @@
                   <a class="nav-link" href="{% url 'news' this_year %}">Newsletters</a>
                 </li>
                 {% if perms.main.change_event %}
-                <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    Committee Only
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{% url 'compnight' %}">Competition Night</a></li>
-                    <li><a class="dropdown-item" href="{% url 'totals' this_year %}">Annual Results</a></li>
-                    <li><a class="dropdown-item" href="{% url 'members' %}">Members</a></li>
-                </ul>
-                </li>
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle"
+                       href="#"
+                       role="button"
+                       data-bs-toggle="dropdown"
+                       aria-expanded="false">Committee Only</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a class="dropdown-item" href="{% url 'compnight' %}">Competition Night</a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{% url 'totals' this_year %}">Annual Results</a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{% url 'members' %}">Members</a>
+                      </li>
+                    </ul>
+                  </li>
                 {% endif %}
-            </ul>
+              </ul>
             </div>
             <div class="d-flex">
               {% if user.is_authenticated %}
-                <a class="btn btn--outline-primary mx-2 text-nowrap" href="{% url 'profile' user.person.member.id %}">Hi {{ user.person.firstname }}</a>
-                <a class="btn btn-secondary" href="{% url 'logout' %}?next={{ request.path }}">Logout</a>
+                <a class="btn btn--outline-primary mx-2 text-nowrap"
+                   href="{% url 'profile' user.person.member.id %}">Hi {{ user.person.firstname }}</a>
+                <a class="btn btn-secondary"
+                   href="{% url 'logout' %}?next={{ request.path }}">Logout</a>
+                {% if user.is_staff %}
+                  <a class="btn btn-success ml-1"
+                     href="{% url 'admin:index' %}?next={{ request.path }}">Admin</a>
+                {% endif %}
               {% else %}
-                <a class="btn btn-outline-primary" href="{% url 'login' %}?next={{ request.path }}">Login</a>
+                <a class="btn btn-outline-primary"
+                   href="{% url 'login' %}?next={{ request.path }}">Login</a>
               {% endif %}
             </div>
-        </div>
-      </nav>
-        {% endblock %}
-        {% if messages %}
-          <div id="message-container">
-            {% for message in messages %}
-              {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-              {% elif message.level == DEFAULT_MESSAGE_LEVELS.WARNING %}
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
-              {% elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-              {% elif message.level == DEFAULT_MESSAGE_LEVELS.INFO %}
-                  <div class="alert alert-info alert-dismissible fade show" role="alert">
-              {% else %}
-                  <div class="alert alert-primary alert-dismissible fade show" role="alert">
-              {% endif %}    
-              {{message}}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
           </div>
-        {% endif %}
-
-        <div class="container-fluid pt-5 my-5">
-          <div class="pt-5 lg-pt-0">{% block content %}{% endblock %}</div>
-          <div class="container my-3">
-            <div class="d-flex justify-content-center fixed-bottom bg-white pt-1">
-            <p class="text-center">All images displayed on this site are copyright of WA Camera Club members and may not be
-            used for any purpose without prior permission of the photographer in question.</p>
-            </div>
-          </div>
+        </nav>
+      {% endblock navbar %}
+    </div>
+    {% if messages %}
+      <div id="message-container">
+        {% for message in messages %}
+          {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {% elif message.level == DEFAULT_MESSAGE_LEVELS.WARNING %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+          {% elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
+             <div class="alert alert-success alert-dismissible fade show" role="alert">
+          {% elif message.level == DEFAULT_MESSAGE_LEVELS.INFO %}
+             <div class="alert alert-info alert-dismissible fade show" role="alert">
+          {% else %}
+             <div class="alert alert-primary alert-dismissible fade show" role="alert">
+          {% endif %}
+          {{ message }}
+            <button type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+              aria-label="Close"></button>
+              </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="container-fluid pt-5 my-5">
+      <div class="pt-5 lg-pt-0">
+        {% block content %}
+        {% endblock content %}
+      </div>
+      <div class="container my-3">
+        <div class="d-flex justify-content-center fixed-bottom bg-white pt-1">
+          <p class="text-center">
+            All images displayed on this site are copyright of WA Camera Club members and may not be
+            used for any purpose without prior permission of the photographer in question.
+          </p>
         </div>
       </div>
     </div>
-    <script src={% static 'js/bootstrap.bundle.min.js' %}></script>
-    <script>
-      // Auto-dismiss messages after 5 seconds
-      document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-            var messageContainer = document.getElementById('message-container');
-            if (messageContainer) {
-                messageContainer.style.opacity = '0';
-                setTimeout(function() {
-                    messageContainer.style.display = 'none';
-                }, 1000); // Fade out duration
-            }
-        }, 5000); // Auto-dismiss duration
-      });
-      // Attach event listener to window for clicks
-        window.addEventListener('click', function(event) {
-          var target = event.target;
+  </div>
+</div>
 
-          // close the modal
-          var modal = document.querySelector('.modal.show');
-          if (modal) {
-              var modalInstance = bootstrap.Modal.getInstance(modal);
-              if (modalInstance) {
-                  modalInstance.hide(); // Close the modal
-              }
+<script src={% static 'js/bootstrap.bundle.min.js' %}></script>
+  <script>
+    // Auto-dismiss messages after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+          var messageContainer = document.getElementById('message-container');
+          if (messageContainer) {
+              messageContainer.style.opacity = '0';
+              setTimeout(function() {
+                  messageContainer.style.display = 'none';
+              }, 1000); // Fade out duration
           }
-        });
-      // Attach event listener to window for contextmenu (right-click) events
-      window.addEventListener('contextmenu', function(event) {
-        // Prevent the default behavior of the context menu (i.e., block it from opening)
-        event.preventDefault();
-        // Check if the modal is open
+      }, 5000); // Auto-dismiss duration
+    });
+    // Attach event listener to window for clicks
+      window.addEventListener('click', function(event) {
+        var target = event.target;
+
+        // close the modal
         var modal = document.querySelector('.modal.show');
         if (modal) {
             var modalInstance = bootstrap.Modal.getInstance(modal);
@@ -136,7 +155,20 @@
             }
         }
       });
-    </script>
-    {% block scripts %}{% endblock %}
+    // Attach event listener to window for contextmenu (right-click) events
+    window.addEventListener('contextmenu', function(event) {
+      // Prevent the default behavior of the context menu (i.e., block it from opening)
+      event.preventDefault();
+      // Check if the modal is open
+      var modal = document.querySelector('.modal.show');
+      if (modal) {
+          var modalInstance = bootstrap.Modal.getInstance(modal);
+          if (modalInstance) {
+              modalInstance.hide(); // Close the modal
+          }
+      }
+    });
+  </script>
+  {% block scripts %}{% endblock scripts %}
   </body>
 </html>

@@ -1,118 +1,129 @@
-{% extends 'main/base.html' %}
+{% extends "main/base.html" %}
 {% load static %}
-
 {% block content %}
-<div class="container">
-    {% now "Y-m-d" as todays_date %}
-    <div class="col-10">
-        <h1>{{ event.name }}</h1>
-        <h3>{{ event.starts.date }} {{ event.starts|time:"H:i" }} - {{ event.ends|time:"H:i" }}</h3>
-        {% if event.description %}
-        <p>{{ event.description }}</p>
-        {% endif %}
-        {% if event.competition_set.all %}
-        <div>
-            {% if event.starts|date:"Y-m-d" > todays_date %}
-            <h3>Competitions held on the night will be:</h3>
-            <ul class="list-group">
-            {% for competition in event.competition_set.all %}
-                {% if 'Open' in competition.type.type %}
-                <li class="list-group-item d-flex justify-content-between">{{ competition.type }}
-                {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" > todays_date and user.person.member.current and "igital" in competition.type.type %}
-                    <a class="btn btn-outline-primary ml-auto" href="{% url 'enter_competition' competition.id %}" >Upload Entry</a>
-                {% endif %}
-                {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type %}
-                    {% if user.person.member.current %}
-                        <a class="btn btn-outline-primary ml-auto" href="{% url 'competition_vote' competition.id %}">Vote</a>
-                    {% endif %}
-                    {% if user.person.judge == competition.judge or user.person.position %}
-                        <a class="btn btn-outline-primary ml-auto" href="{% url 'competition_judge' competition.id %}">View Entries</a>
-                    {% endif %}
-                {% endif %}</li>
-                {% else%}
-                <li class="list-group-item d-flex justify-content-between">{{ competition.type }} - {{ competition.subject }}
-                {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" > todays_date and user.person.member.current and "igital" in competition.type.type %}
-                    <a class="btn btn-outline-primary ml-auto" href="{% url 'enter_competition' competition.id %}" >Upload Entry</a>
-                {% endif %}
-                {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type %}
-                    {% if user.person.member.current %}
-                        <a class="btn btn-outline-primary ml-auto" href="{% url 'competition_vote' competition.id %}">Vote</a>
-                    {% endif %}
-                    {% if user.person.judge == competition.judge or user.person.position %}
-                        <a class="btn btn-primary ml-auto" href="{% url 'competition_judge' competition.id %}">View Entries</a>
-                    {% endif %}
-                {% endif %}</li>
-                {% endif %}
-            {% endfor %}
-            </ul>
-            {% if perms.main.change_event %}
-            <div class="my-1">
-            <a class="btn btn-primary" href="{% url 'create_comp' event.id %}">Add Competition</a>
-            </div>
-            {% endif %}
-            {% else %}
-                <h3>Competitions held on the night were:</h3>
-                {% comment %} Loop through Competitions {% endcomment %}
-                <ul class="list-group">
-                {% for comp in comps %}
-                    {% if 'Open' in comp.type.type %}
-                    <li class="list-group-item">{{ comp.type }}</li>
-                    {% else%}
-                    <li class="list-group-item">{{ comp.type }} - {{ comp.subject }}</li>
-                    {% endif %}
-                {% endfor %}
-                </ul>
-                {% for comp in comps %}
-                    {% comment %} if the comp has any images uploaded {% endcomment %}
-                    {% if comp.images.all %}
-                    </br>
-                        {% if 'Open' in comp.type.type %}
-                        <h4>{{ comp.type }} Awarded Images:</h4>
-                        {% else%}
-                        <h4>{{ comp.type }} (Subject: {{ comp.subject }}) Awarded Images:</h4>
-                        {% endif %}
-                        <ul class="image-gallery">
-                            {% for image in comp.images.all %}
-                                {% if image.award_set.all %}
-                                    {% include "main/includes/gallery_items.html" %}
+    <div class="container">
+        {% now "Y-m-d" as todays_date %}
+        <div class="col-10">
+            <h1>{{ event.name }}</h1>
+            <h3>{{ event.starts.date }} {{ event.starts|time:"H:i" }} - {{ event.ends|time:"H:i" }}</h3>
+            {% if event.description %}<p>{{ event.description }}</p>{% endif %}
+            {% if event.competition_set.all %}
+                <div>
+                    {% if event.starts|date:"Y-m-d" > todays_date %}
+                        <h3>Competitions held on the night will be:</h3>
+                        <ul class="list-group">
+                            {% for competition in event.competition_set.all %}
+                                {% if 'Open' in competition.type.type %}
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        {{ competition.type }}
+                                        {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" > todays_date and user.person.member.current and "igital" in competition.type.type %}
+                                            <a class="btn btn-outline-primary ml-auto"
+                                               href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
+                                        {% endif %}
+                                        {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type %}
+                                            {% if user.person.member.current %}
+                                                <a class="btn btn-outline-primary ml-auto"
+                                                   href="{% url 'competition_vote' competition.id %}">Vote</a>
+                                            {% endif %}
+                                            {% if user.person.judge == competition.judge or user.person.position %}
+                                                <a class="btn btn-outline-primary ml-auto"
+                                                   href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                                            {% endif %}
+                                        {% endif %}
+                                    </li>
+                                {% else %}
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        {{ competition.type }} - {{ competition.subject }}
+                                        {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" > todays_date and user.person.member.current and "igital" in competition.type.type %}
+                                            <a class="btn btn-outline-primary ml-auto"
+                                               href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
+                                        {% endif %}
+                                        {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type %}
+                                            {% if user.person.member.current %}
+                                                <a class="btn btn-outline-primary ml-auto"
+                                                   href="{% url 'competition_vote' competition.id %}">Vote</a>
+                                            {% endif %}
+                                            {% if user.person.judge == competition.judge or user.person.position %}
+                                                <a class="btn btn-primary ml-auto"
+                                                   href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                                            {% endif %}
+                                        {% endif %}
+                                    </li>
                                 {% endif %}
                             {% endfor %}
                         </ul>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        </div>
+                        {% if perms.main.change_event %}
+                            <div class="my-1">
+                                <a class="btn btn-primary" href="{% url 'create_comp' event.id %}">Add Competition</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <h3>Competitions held on the night were:</h3>
+                        {% comment %} Loop through Competitions {% endcomment %}
+                        <ul class="list-group">
+                            {% for comp in comps %}
+                                {% if 'Open' in comp.type.type %}
+                                    <li class="list-group-item">{{ comp.type }}</li>
+                                {% else %}
+                                    <li class="list-group-item">{{ comp.type }} - {{ comp.subject }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                        {% for comp in comps %}
+                            {% comment %} if the comp has any images uploaded {% endcomment %}
+                            {% if comp.images.all %}
+                            </br>
+                            {% if 'Open' in comp.type.type %}
+                                <h4>{{ comp.type }} Awarded Images:</h4>
+                            {% else %}
+                                <h4>{{ comp.type }} (Subject: {{ comp.subject }}) Awarded Images:</h4>
+                            {% endif %}
+                            <ul class="image-gallery">
+                                {% for image in comp.images.all %}
+                                    {% if image.award_set.all %}
+                                    {% if image.photo %}
+                                        {% include "main/includes/gallery_items.html" %}
+                                    {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
         {% else %}
             {% if "ompetition" in event.name %}
                 <div>
-                {% if event.competition_set.all %}
-                    <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add Competition</a>
-                {% else %}
-                    <a class="btn btn-primary" href="{% url 'create_compnight' event.id %}">Setup Competition Night</a>
-                    <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add a Single Competition</a>
-                {% endif %}
+                    {% if event.competition_set.all %}
+                        <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add Competition</a>
+                    {% else %}
+                        <a class="btn btn-primary" href="{% url 'create_compnight' event.id %}">Setup Competition Night</a>
+                        <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add a Single Competition</a>
+                    {% endif %}
                 </div>
             {% endif %}
         {% endif %}
         {% comment %} If the event has galleries and they are public, show them {% endcomment %}
         {% if event.gallery_set.all %}
             {% for gallery in event.gallery_set.all %}
-            <div>
-                {% if gallery.public_after|date:"Y-m-d" < todays_date %}
-                <h3>Images from {{ gallery.name }}</h3>
-                    {% comment %} if the gallery has any images uploaded {% endcomment %}
-                    <ul class="image-gallery">
-                        {% for image in gallery.images.all %}
-                            {% include "main/includes/gallery_items.html" %}
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                {% if gallery.member_upload_from|date:"Y-m-d" <= todays_date %}
-                    {% if gallery.member_upload_until|date:"Y-m-d" >= todays_date %}
-                        <a class="btn btn-primary" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
+                <div>
+                    {% if gallery.public_after|date:"Y-m-d" < todays_date %}
+                        <h3>Images from {{ gallery.name }}</h3>
+                        {% comment %} if the gallery has any images uploaded {% endcomment %}
+                        <ul class="image-gallery">
+                            {% for image in gallery.images.all %}
+                            {% if image.photo %}
+                                {% include "main/includes/gallery_items.html" %}
+                            {% endif %}
+                            {% endfor %}
+                        </ul>
                     {% endif %}
-                {% endif %}
-            </div>
+                    {% if gallery.member_upload_from|date:"Y-m-d" <= todays_date %}
+                        {% if gallery.member_upload_until|date:"Y-m-d" >= todays_date %}
+                            <a class="btn btn-primary" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
             {% endfor %}
         {% endif %}
         {% if event.file %}
@@ -121,19 +132,19 @@
             {% elif 'pdf' in event.extension %}
                 <div id="pdf-viewer" class="embed-responsive"></div>
             {% elif 'docx' in event.extension %}
-            <!-- Render a Word document icon or thumbnail image -->
+                <!-- Render a Word document icon or thumbnail image -->
             {% endif %}
         {% endif %}
         {% if perms.main.change_event %}
-        <a class="btn btn-primary mt-1" href="{% url 'event_add_file' event.id %}">Edit Event Details</a>
+            <a class="btn btn-primary mt-1"
+               href="{% url 'event_add_file' event.id %}">Edit Event Details</a>
         {% endif %}
     </div>
-</div>    
-{% endblock %}
-
+</div>
+{% endblock content %}
 {% block scripts %}
-{% if event.file %}
-<script type="module">
+    {% if event.file %}
+        <script type="module">
     import { GlobalWorkerOptions, getDocument } from '{% static 'pdfjs/build/pdf.mjs' %}';
 
     // URL of the PDF file
@@ -158,6 +169,6 @@
             document.getElementById('pdf-viewer').appendChild(canvas);
         });
     });
-</script>
-{% endif %}
-{% endblock %}
+        </script>
+    {% endif %}
+{% endblock scripts %}

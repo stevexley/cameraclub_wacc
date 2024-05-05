@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import Http404
-from django.urls import reverse_lazy
+from django.http import Http404, HttpResponseRedirect
+from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
@@ -10,13 +10,14 @@ from django.views import View
 from django.views.generic.list import ListView
 from django.views.generic.dates import YearArchiveView
 from django.views.generic.detail import DetailView
-from django.views.generic import CreateView, UpdateView
+from django.views.generic.edit import FormMixin
+from django.views.generic import CreateView, UpdateView, TemplateView
+from django.forms import inlineformset_factory
 from django.db.models import Sum, Max
-from django.db import transaction
 
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
     Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter
-from .forms import EventUploadForm, ImageForm, CompForm, CompetitionNightSetupForm
+from .forms import *
 from datetime import datetime, timedelta
 import subprocess
 
@@ -29,7 +30,6 @@ class ProfileView(PermissionRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         person = context['member'].person
         context["images"] = Image.objects.filter(author = person,
-                                                 photo__icontains = 'photo'
                                                  ).order_by('-competitions__judging_closes')
         return context
     
@@ -317,7 +317,7 @@ class EnterCompetitionView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     success_message = "Entry Uploaded"
 
     def get_initial(self):
-        competition = Competition.objects.get(id=self.kwargs['competition_id'])
+        competition = Competition.objects.get(id=self.kwargs['pk'])
         author = Person.objects.get(user=self.request.user)
         if 'Print' in competition.type.type:
             print = True
@@ -327,21 +327,21 @@ class EnterCompetitionView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     
     def get_form_kwargs(self):
         kwargs = super(EnterCompetitionView, self).get_form_kwargs()
-        kwargs.update({'competition_id': self.kwargs['competition_id']})  # to pass id to form
-        print(f"Competition ID in view get_form_kwargs: {self.kwargs['competition_id']}")
+        kwargs.update({'pk': self.kwargs['pk']})  # to pass id to form
+        kwargs['source_view'] = 'enter_competition'  # Indicate the source view
         return kwargs
 
     # Validation of photo done in the form
     def form_valid(self, form):
         # Get competition so we can add the image to it
-        competition = Competition.objects.get(id=self.kwargs['competition_id'])
+        competition = Competition.objects.get(id=self.kwargs['pk'])
         image = form.save()
         image.competitions.add(competition)
         return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['competition'] = Competition.objects.get(id=self.kwargs['competition_id'])
+        context['competition'] = Competition.objects.get(id=self.kwargs['pk'])
         return context
     
 class MemberVotingView(LoginRequiredMixin, View):
@@ -353,6 +353,13 @@ class MemberVotingView(LoginRequiredMixin, View):
         try:
             competition = Competition.objects.get(pk=competition_id)
             images = competition.images.all()
+            image_index = []
+            for image in images:
+                image_index.append(image.id)
+                
+            for index, item in enumerate(image_index):
+                print(str(index) + " " + str(item))
+                
             if competition.type.selection_not_places:
                 vote_options = VoteOption.objects.filter(active=True, judge_only=False, exclusive=False)
             else:
@@ -363,6 +370,7 @@ class MemberVotingView(LoginRequiredMixin, View):
             context = {
                 'competition': competition,
                 'images': images,
+                'image_index': image_index,
                 'vote_options': vote_options,
                 'voted_options': voted_options,
             }
@@ -375,25 +383,29 @@ class MemberVotingView(LoginRequiredMixin, View):
             competition = Competition.objects.get(pk=competition_id)
             check = None
             for vote_option_id, image_id in request.POST.items():
-                vo = VoteOption.objects.get(id = vote_option_id)
-                if image_id.isdigit() and vote_option_id.isdigit():
-                    # Make sure member hasn't voted in this comp already
-                    check = Vote.objects.filter(competition = competition,
-                                        voter = request.user.person.member,
-                                        vote__id = vote_option_id)
-                    if check and vo.exclusive:
-                        messages.error(request, "You already voted in this competition")
-                        return redirect('events')
-                    else:
-                        vote_option = VoteOption.objects.get(pk=vote_option_id)
-                        if not vote_option.judge_only:
-                            vote = Vote.objects.update_or_create(
-                                voter=request.user.person.member,
-                                competition=competition,
-                                image_id=image_id,
-                                vote=vote_option,
-                            )   
-                    check = None
+                # first item passed is middleware token so ignore it
+                if vote_option_id != "csrfmiddlewaretoken":
+                    # Get vote option from ID
+                    vo = VoteOption.objects.get(id = vote_option_id)
+                    if image_id.isdigit() and vote_option_id.isdigit():
+                        # Make sure member hasn't voted in this comp already
+                        check = Vote.objects.filter(competition = competition,
+                                            voter = request.user.person.member,
+                                            vote__id = vote_option_id)
+                        if check and vo.exclusive:
+                            messages.error(request, "You already voted in this competition")
+                            return redirect('events')
+                        else:
+                            # All good so create votes
+                            vote_option = VoteOption.objects.get(pk=vote_option_id)
+                            if not vote_option.judge_only:
+                                vote = Vote.objects.update_or_create(
+                                    voter=request.user.person.member,
+                                    competition=competition,
+                                    image_id=image_id,
+                                    vote=vote_option,
+                                )   
+                        check = None
             messages.success(request, "Votes lodged")
             return redirect('events')
         except (Competition.DoesNotExist, VoteOption.DoesNotExist):
@@ -526,7 +538,194 @@ class CompNightJudgesView(PermissionRequiredMixin, DetailView):
     permission_required = "main.change_competition"
     model = Competition
     template_name = 'main/judge_slideshow.html'
-        
+
+class UploadPhotoView(LoginRequiredMixin, UpdateView):
+    login_url = "accounts/login/"
+    redirect_field_name = "redirect_to"
+    model = Image
+    form_class = PhotoForm
+    template_name = 'main/add_photo.html'
+    
+    def get_success_url(self):
+        return reverse('profile', kwargs={'pk': self.object.author.id })
+
+class AddImagesToCompetitionView(FormMixin, ListView):
+    model = Image
+    template_name = 'main/add_images_to_comp.html'
+    context_object_name = 'images'
+    form_class = ImageForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['pk'] = self.kwargs.get('pk')
+        kwargs['source_view'] = 'add_images'  # Indicate the source view
+        return kwargs
+    
+    def get_queryset(self):
+        competition = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
+        # order by id so that numbered list matches order of entry
+        # this is for print list and stickers on comp night 
+        return competition.images.all().order_by('id')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['competition'] = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
+        context['form'] = self.get_form()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object_list = self.get_queryset()
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        competition = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
+        image = form.save(commit=False)
+        image.save()
+        competition.images.add(image)
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('competition_add_images', kwargs={'pk': self.kwargs.get('pk')})
+    
+class JudgeAwardUpdateView(PermissionRequiredMixin, TemplateView):
+    template_name = 'main/award_entries.html'
+    permission_required = "main.change_competition"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        competition_id = self.kwargs.get('pk')
+        competition = Competition.objects.get(pk=competition_id)
+        images = competition.images.all()
+        formset_data = []
+        for image in images:
+            award = Award.objects.filter(image=image, 
+                                         competition=competition,
+                                         type__awarded_by__judge = True).first()
+            initial = {
+                'title': image.title,
+                'author': f"{image.author.firstname} {image.author.surname}",
+                'image_id': image.id,
+                'competition_id': competition_id,
+                'award_type': award.type if award else None
+            }
+            formset_data.append(initial)
+        formset = JudgeAwardFormSet(initial=formset_data)
+        context['competition'] = competition
+        context['formset'] = formset
+        return context
+
+    def post(self, request, *args, **kwargs):
+        competition_id = self.kwargs.get('pk')
+        competition = Competition.objects.get(pk=competition_id)
+        formset = JudgeAwardFormSet(request.POST)
+        if formset.is_valid():
+            for form in formset:
+                image_id = form.cleaned_data['image_id']
+                award_type = form.cleaned_data['award_type']
+                existing_award = None
+                if award_type == None:
+                # Delete existing award if it exists
+                    Award.objects.filter(
+                        image_id=image_id,
+                        competition=competition,
+                        type__awarded_by__judge=True
+                        ).delete()
+                else:
+                    # Get existing award
+                    existing_award = Award.objects.filter(
+                    image_id=image_id,
+                    competition=competition,
+                    type__awarded_by__judge=True
+                    ).first()
+                if existing_award:
+                    # Update existing award
+                    existing_award.type = award_type
+                    existing_award.save()
+                elif award_type:
+                    # Create new award from the judge if there is an award
+                    Award.objects.create(
+                        image_id=image_id,
+                        competition=competition,
+                        type=award_type
+                    )
+            # Redirect to a success URL
+            return HttpResponseRedirect(reverse_lazy('competition_awards', kwargs={'pk': self.kwargs.get('pk')}))
+        else:
+            # If the formset is invalid, re-render the template with errors
+            return self.render_to_response(self.get_context_data(formset=formset))
+
+class MemberAwardUpdateView(PermissionRequiredMixin, TemplateView):
+    template_name = 'main/award_entries.html'
+    permission_required = "main.change_competition"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        competition_id = self.kwargs.get('pk')
+        competition = Competition.objects.get(pk=competition_id)
+        images = competition.images.all()
+        formset_data = []
+        for image in images:
+            award = Award.objects.filter(image=image, 
+                                         competition=competition,
+                                         type__awarded_by__members = True).first()
+            initial = {
+                'title': image.title,
+                'author': f"{image.author.firstname} {image.author.surname}",
+                'image_id': image.id,
+                'competition_id': competition_id,
+                'award_type': award.type if award else None
+            }
+            formset_data.append(initial)
+        formset = MemberAwardFormSet(initial=formset_data)
+        context['competition'] = competition
+        context['formset'] = formset
+        return context
+
+    def post(self, request, *args, **kwargs):
+        competition_id = self.kwargs.get('pk')
+        competition = Competition.objects.get(pk=competition_id)
+        formset = MemberAwardFormSet(request.POST)
+        if formset.is_valid():
+            for form in formset:
+                image_id = form.cleaned_data['image_id']
+                award_type = form.cleaned_data['award_type']
+                existing_award = None
+                if award_type == None:
+                # Delete existing award if it exists
+                    Award.objects.filter(
+                        image_id=image_id,
+                        competition=competition,
+                        type__awarded_by__members=True
+                        ).delete()
+                else:
+                    # Get existing award
+                    existing_award = Award.objects.filter(
+                    image_id=image_id,
+                    competition=competition,
+                    type__awarded_by__members=True
+                    ).first()
+                if existing_award:
+                    # Update existing award
+                    existing_award.type = award_type
+                    existing_award.save()
+                elif award_type:
+                    # Create new award from the judge if there is an award
+                    Award.objects.create(
+                        image_id=image_id,
+                        competition=competition,
+                        type=award_type
+                    )
+            # Redirect to a success URL
+            return HttpResponseRedirect(reverse_lazy('competition_awards', kwargs={'pk': self.kwargs.get('pk')}))
+        else:
+            # If the formset is invalid, re-render the template with errors
+            return self.render_to_response(self.get_context_data(formset=formset))
+
+
 class AddToGalleryView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     '''The view to upload to event galleries, similar to competition upload but without rules'''
     login_url = "accounts/login/"

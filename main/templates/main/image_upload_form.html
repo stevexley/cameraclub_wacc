@@ -1,4 +1,4 @@
-{% extends 'main/base.html' %}
+{% extends "main/base.html" %}
 
 {% block content %}
 <div class="container">
@@ -25,12 +25,14 @@
         {% endfor %}
         {% for field in form.visible_fields %}
           <div class="mb-3">
-            <label>{{ field.label }}</label>
+            {% if field.name == 'print' %}
+            <label class="form-check-label mr-5">{{ field.label }}</label>
+            {% endif %}
             {% if field.errors %}
                 <div class="form-control is-invalid">
                     {{ field }}
                 </div>
-                <div id="{{field.name}}Feedback" class="invalid-feedback">
+                <div id="{{ field.name }}Feedback" class="invalid-feedback">
                     {{ field.errors }}
                 </div>
             {% else %}
@@ -41,8 +43,14 @@
             {% endif %}
           </div>
         {% endfor %}
-        <input class="btn btn-primary" type="submit" value="Submit" />
+        <input class="btn btn-outline-primary" type="submit" value="Submit" />
         </form>
+        {% if perms.main.change_competition %}
+        <div class="my-4">
+          <a class="btn btn-primary btn-block"
+             href="{% url 'competition_add_images' competition.id %}">Add Multiple Images to Competition</a>
+        </div>  
+        {% endif %}
     </div>
 </div>
-{% endblock %}
+{% endblock content %}

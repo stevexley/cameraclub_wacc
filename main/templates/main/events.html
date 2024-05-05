@@ -1,109 +1,107 @@
-{% extends 'main/base.html' %}
-
+{% extends "main/base.html" %}
 {% block content %}
-<div class="container">
-    <div class="col">
-    
-    <div class="row justify-content-between mb-3 text-center">
-        <div class="col-2">
-            {% if previous_year %}
-            <a class="btn btn-outline-primary" href="{% url 'events' year=previous_year %}">{{ previous_year }}</a>
-            {% endif %}
-        </div>
-            <div class="col">
-            <h1>Events for {{ year.year }}</h1>
+    <div class="container">
+        <div class="col">
+            <div class="row justify-content-between mb-3 text-center">
+                <div class="col-2">
+                    {% if previous_year %}
+                        <a class="btn btn-outline-primary"
+                           href="{% url 'events' year=previous_year %}">{{ previous_year }}</a>
+                    {% endif %}
+                </div>
+                <div class="col">
+                    <h1>Events for {{ year.year }}</h1>
+                </div>
+                <div class="col-2">
+                    {% if next_year %}
+                        <a class="btn btn-outline-primary float-end"
+                           href="{% url 'events' year=next_year %}">{{ next_year }}</a>
+                    {% endif %}
+                </div>
             </div>
-        <div class="col-2">
-            {% if next_year %}
-                <a class="btn btn-outline-primary float-end" href="{% url 'events' year=next_year %}">{{ next_year }}</a>
-            {% endif %}
-        </div>
-    </div>
-    {% now "Y-m-d" as todays_date %}
-    {% now "m" as todays_month %}
-    {% now "Y-m-d H:i" as right_now %}
-    {% for event in events %}
-    <div class="col">
-        <ul class="event-list">
-            <li>
-                {% if event.starts|date:"Y-m-d" > todays_date %}
-                    <span class="hidden" id="today_bookmark"></span>
-                {% endif %}
-                <time datetime={{ event.starts }}>
-                    {% if event.starts|date:"M" == event.ends|date:"M" %}
-                        <span class="month">{{ event.starts|date:"M" }}</span>
-                    {% else %}
-                        <span class="month-sm">{{ event.starts|date:"M" }}-{{ event.ends|date:"M" }}</span>
-                    {% endif %}
-                    {% if event.starts.day == event.ends.day %}
-                        <span class="day">{{ event.starts.day }}</span>
-                    {% else %}
-                        <span class="day-sm">{{ event.starts.day }}-{{ event.ends.day }}</span>
-                    {% endif %}
-                    <span class="time">{{ event.starts|time:"H:i"}} - {{ event.ends|time:"H:i"}}</span>    
-                    <a class="divLink" href="{% url 'event' event.id %}"></a>
-                </time>
-                <div class="info" onclick="event.stopPropagation();">
-                    <h3 class="title">{{ event.name }}</h3>
-                    {% if event.description %}
-                    <p class="desc">{{ event.description }}</p>
-                    {% endif %}
-                    
-                    {% if event.competition_set.all %}
-                    <div class="desc">
-                        {% for competition in event.competition_set.all %}
-                            {% if competition.open_for_entries|date:"Y-m-d H:i" < right_now and competition.entries_close|date:"Y-m-d H:i" > right_now %}
-                                {% if 'Open' in competition.type.type %}
-                                <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'enter_competition' competition.id %}" >{{ competition.type }}</a>
-                                {% else%}
-                                <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'enter_competition' competition.id %}" >{{ competition.type }} - {{ competition.subject }}</a>
+            {% now "Y-m-d" as todays_date %}
+            {% now "m" as todays_month %}
+            {% now "Y-m-d H:i" as right_now %}
+            {% for event in events %}
+                <div class="col">
+                    <ul class="event-list">
+                        <li>
+                            {% if event.starts|date:"Y-m-d" > todays_date %}<span class="hidden" id="today_bookmark"></span>{% endif %}
+                            <time datetime={{ event.starts }}>
+                                {% if event.starts|date:"M" == event.ends|date:"M" %}
+                                    <span class="month">{{ event.starts|date:"M" }}</span>
+                                {% else %}
+                                    <span class="month-sm">{{ event.starts|date:"M" }}-{{ event.ends|date:"M" }}</span>
                                 {% endif %}
-                            {% elif competition.open_for_judging|date:"Y-m-d H:i" < right_now and competition.judging_closes|date:"Y-m-d H:i" > right_now %}
-                                {% if 'Open' in competition.type.type %}
-                                <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'competition_vote' competition.id %}" >{{ competition.type }}</a>
-                                {% else%}
-                                <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'competition_vote' competition.id %}" >{{ competition.type }} - {{ competition.subject }}</a>
+                                {% if event.starts.day == event.ends.day %}
+                                    <span class="day">{{ event.starts.day }}</span>
+                                {% else %}
+                                    <span class="day-sm">{{ event.starts.day }}-{{ event.ends.day }}</span>
                                 {% endif %}
-                            {% elif competition.judging_closes|date:"Y-m-d H:i" < right_now %}
-                                {% if 'Open' in competition.type.type %}
-                                <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'competition_awards' competition.id %}" >{{ competition.type }}</a>
-                                {% else%}
-                                <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'competition_awards' competition.id %}" >{{ competition.type }} - {{ competition.subject }}</a>
+                                <span class="time">{{ event.starts|time:"H:i" }} - {{ event.ends|time:"H:i" }}</span>
+                                <a class="divLink" href="{% url 'event' event.id %}"></a>
+                            </time>
+                            <div class="info" onclick="event.stopPropagation();">
+                                <h3 class="title">{{ event.name }}</h3>
+                                {% if event.description %}<p class="desc">{{ event.description }}</p>{% endif %}
+                                {% if event.competition_set.all %}
+                                    <div class="desc">
+                                        {% for competition in event.competition_set.all %}
+                                            {% if competition.open_for_entries|date:"Y-m-d H:i" < right_now and competition.entries_close|date:"Y-m-d H:i" > right_now and user.person.member.current %}
+                                                {% if 'Open' in competition.type.type %}
+                                                    <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                       href="{% url 'enter_competition' competition.id %}">{{ competition.type }}</a>
+                                                {% else %}
+                                                    <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                       href="{% url 'enter_competition' competition.id %}">{{ competition.type }} - {{ competition.subject }}</a>
+                                                {% endif %}
+                                            {% elif competition.open_for_judging|date:"Y-m-d H:i" < right_now and competition.judging_closes|date:"Y-m-d H:i" > right_now and user.person.member.current %}
+                                                {% if 'Open' in competition.type.type %}
+                                                    <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                       href="{% url 'competition_vote' competition.id %}">{{ competition.type }}</a>
+                                                {% else %}
+                                                    <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                       href="{% url 'competition_vote' competition.id %}">{{ competition.type }} - {{ competition.subject }}</a>
+                                                {% endif %}
+                                            {% elif competition.judging_closes|date:"Y-m-d H:i" < right_now %}
+                                                {% if 'Open' in competition.type.type %}
+                                                    <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                       href="{% url 'competition_awards' competition.id %}">{{ competition.type }}</a>
+                                                {% else %}
+                                                    <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                       href="{% url 'competition_awards' competition.id %}">{{ competition.type }} - {{ competition.subject }}</a>
+                                                {% endif %}
+                                            {% else %}
+                                                {% if 'Open' in competition.type.type %}
+                                                    <span class="badge rounded-pill bg-primary text-light fs-5">{{ competition.type }}</span>
+                                                {% else %}
+                                                    <span class="badge rounded-pill bg-primary text-light fs-5">{{ competition.type }} - {{ competition.subject }}</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
                                 {% endif %}
-                            {% else %}
-                                {% if 'Open' in competition.type.type %}
-                                <span class="badge rounded-pill bg-primary text-light fs-5">{{ competition.type }}</span>
-                                {% else%}
-                                <span class="badge rounded-pill bg-primary text-light fs-5">{{ competition.type }} - {{ competition.subject }}</span>
+                                {% if event.gallery_set.all %}
+                                    <h3>Galleries:</h3>
+                                    <ul>
+                                        {% for gallery in event.gallery_set.all %}<li>{{ gallery.name }}</li>{% endfor %}
+                                    </ul>
                                 {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    {% if event.gallery_set.all %}
-                    <h3>Galleries:</h3>
-                    <ul>
-                        {% for gallery in event.gallery_set.all %}
-                            <li>{{ gallery.name }}</li>
-                        {% endfor %}
+                            </div>
+                            <div class="social"></div>
+                        </li>
                     </ul>
+                </div>
+            {% endfor %}
+            <div>
+                {% if todays_month > 9 %}
+                    {% if user.person.position == 'Webmaster' %}
+                        <div class="d-grid gap-2">
+                            <a class="btn btn-primary" href="{% url 'create-events' %}">Create All Next Year's Events</a>
+                        </div>
                     {% endif %}
-                </div>
-                <div class="social">
-                </div>
-            </li>
-        </ul>
-    </div>
-    {% endfor %}
-    <div>
-        {% if todays_month > 9 %}
-            {% if user.person.position == 'Webmaster' %}
-            <div class="d-grid gap-2">
-                <a class="btn btn-primary" href="{% url 'create-events' %}">Create All Next Year's Events</a>
+                {% endif %}
             </div>
-            {% endif %}
-        {% endif %}
+        </div>
     </div>
-</div>
-{% endblock %}
+{% endblock content %}

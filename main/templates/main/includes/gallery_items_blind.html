@@ -12,12 +12,33 @@
         <div class="modal-content modal-content-centrered">
           <div class="wacc-modal-body">
                 <img src="{{ image.photo.url }}" alt="Image Missing, please contact the webmaster">
-                <div class="my-n3"><h2>{{ forloop.counter }}</h2></div>
-                <div>
-                {% for image in images %}
-                  <a class="btn" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}">{{ forloop.counter }}</a>
-                {% endfor %}
+                {% with current_pic=forloop.counter %}
+                <div class="m-1">
+                  <div>
+                    {% if current_pic > 1 %}
+                      {% with prev=forloop.counter|add:"-1" %}
+                        {% with prev_image_id=image_index|slice:prev|last %}
+                          <a class="btn btn-outline-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ prev_image_id }}">Previous</a>
+                        {% endwith %}
+                      {% endwith %}
+                    {% endif %}
+                    {% for image in images %}
+                      {% if forloop.counter == current_pic %}
+                        <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}">{{ forloop.counter }}</a>
+                      {% else %}
+                        <a class="btn" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}">{{ forloop.counter }}</a>
+                      {% endif %}
+                    {% endfor %}
+                    {% if current_pic < images|length %}
+                      {% with next=forloop.counter|add:"1" %}
+                        {% with next_image_id=image_index|slice:next|last %}
+                          <a class="btn btn-outline-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ next_image_id }}">Next</a>
+                        {% endwith %}
+                      {% endwith %}
+                    {% endif %}
+                  </div>
                 </div>
+                {% endwith %}
             </div>
         </div>
     </div>

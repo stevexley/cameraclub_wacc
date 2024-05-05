@@ -1,0 +1,39 @@
+{% extends "main/base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    {% comment %} <div class="form-row">
+        <div class="col">
+            <p>Image</p>
+        </div>
+        <div class="col">
+            Award
+        </div>
+    </div> {% endcomment %}
+    {% for form in formset %}
+        <div class="form-row">
+            {{ form.image_id }}
+            {{ form.competition_id }}
+            <div class="col">
+                <p>{{ form.title.value }} by {{ form.author.value }}</p>
+            </div>
+            <div class="col">
+                {{ form.award_type }}
+                {% for field in form %}
+                    {% if field.errors %}
+                    <ul class="errors">
+                        {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-outline-primary">Save</button>
+</form>
+{% endblock content %}

@@ -1,0 +1,34 @@
+{% extends "main/base.html" %}
+{% block content %}
+    <div class="container">
+        <h1>Images for {{ competition }}</h1>
+        <ol class="list-group list-group-numbered">
+            {% for image in images %}<li class="list-group-item">{{ image.title }} by {{ image.author }}</li>{% endfor %}
+        </ol>
+        <hr>
+        <div class="card">
+            <div class="card-header"><h3>Add New Entry</h3></div>
+            <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                {% for field in form.visible_fields %}
+                    <div class="mb-3">
+                        {% if field.name == 'print' %}<label class="form-check-label mr-5">{{ field.label }}</label>{% endif %}
+                        {% if field.errors %}
+                            <div class="form-control is-invalid">{{ field }}</div>
+                            <div id="{{ field.name }}Feedback" class="invalid-feedback">{{ field.errors }}</div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                        {% if field.name == 'title' %}
+                            <div id="titleHelp" class="form-text">The title will be auto-capitalised for display.</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button class="btn btn-primary" type="submit">Add Image</button>
+            </form>
+        </div>
+        </div>
+    </div>
+{% endblock content %}

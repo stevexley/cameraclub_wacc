@@ -3,7 +3,9 @@
 <div class="container">
   <ul class="image-gallery">
   {% for image in images %}
+  {% if image.photo %}
     {% include "main/includes/gallery_items.html" %}
+  {% endif %}
   {% endfor %}
   </ul>
 </div>

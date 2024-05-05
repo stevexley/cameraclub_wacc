@@ -1,0 +1,23 @@
+{% extends "main/base.html" %}
+{% block content %}
+    <div class="container">
+        <div class="col-10">
+            <form action="" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <h2>Add image to <i>{{ image.title }}</i></h2>
+                {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                {% for field in form.visible_fields %}
+                    <div class="mb-3">
+                        {% if field.errors %}
+                            <div class="form-control is-invalid">{{ field }}</div>
+                            <div id="{{ field.name }}Feedback" class="invalid-feedback">{{ field.errors }}</div>
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                    {% endfor %}
+                    <input class="btn btn-outline-primary" type="submit" value="Save" />
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

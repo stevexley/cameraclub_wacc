@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from django import forms
+from django.forms import formset_factory, BaseFormSet, BaseInlineFormSet, inlineformset_factory
 from django.forms.widgets import SplitDateTimeWidget
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from .models import Image, Competition, Subject, CompetitionType, Judge, Event
+from .models import Image, Competition, Subject, CompetitionType, Judge, Event, Award, AwardType, Person
 from .utils import setTitleCase, checkWidth, checkHeight, checkOneEntry, checkMono
 
 class EventUploadForm(forms.ModelForm):
@@ -22,20 +23,27 @@ class EventUploadForm(forms.ModelForm):
 class ImageForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
-        if kwargs.pop('competition_id', None):
-            self.competition_id = kwargs.pop('competition_id', None)
-        if kwargs.pop('gallery_id', None):
-            self.gallery_id = kwargs.pop('gallery_id', None)
+        source_view = kwargs.pop('source_view', None)
+        pk = kwargs.pop('pk', None)
         super().__init__(*args, **kwargs)
+        if source_view ==  'enter_competition':
+            author_fixed = True
+        if source_view == 'add_images':
+            author_fixed = False
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'form-control'
             visible.field.widget.attrs['placeholder'] = visible.field.label
             visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
         self.fields['print'].widget.attrs['class'] = 'form-check-input form-check-inline'
-        competition = kwargs['initial']['competition']
-        if "print" in competition.type.type.lower():
-            self.fields['print'].initial = True
-        self.fields['author'].widget = forms.HiddenInput()
+        self.fields['author'].empty_label = '-Select Author-'
+        if pk:
+            competition = Competition.objects.get(id=pk)
+            if "print" in competition.type.type.lower():
+                self.fields['print'].initial = True
+        if author_fixed:
+            self.fields['author'].widget = forms.HiddenInput()
+        else:
+            self.fields['author'].queryset = Person.objects.filter(member__current=True)
         
     def clean_title(self):
         title = self.cleaned_data.get('title')
@@ -83,7 +91,15 @@ class ImageForm(forms.ModelForm):
     class Meta:
         model = Image
         fields = ['title', 'author', 'photo', 'print']  # List the fields you want to display in the form
-        
+
+class PhotoForm(forms.ModelForm):
+    
+    class Meta:
+        model = Image
+        fields = ('photo',)
+
+
+
 class CompForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
@@ -135,4 +151,22 @@ class CompetitionNightSetupForm(forms.Form):
     else:
         set_subject = forms.ModelMultipleChoiceField(queryset=Subject.objects.filter(year=datetime.now().year))
     # competition_types = CompetitionType.objects.all()  # Assuming you want all competition types
-    
+
+class JudgeAwardForm(forms.Form):
+    title = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False)
+    author = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False)
+    award_type = forms.ModelChoiceField(queryset=AwardType.objects.filter(awarded_by__judge=True), label='Select Award', required=False)
+    image_id = forms.IntegerField(widget=forms.HiddenInput())
+    competition_id = forms.IntegerField(widget=forms.HiddenInput())
+
+
+JudgeAwardFormSet = formset_factory(JudgeAwardForm, extra=0)
+
+class MemberAwardForm(forms.Form):
+    title = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False)
+    author = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False)
+    award_type = forms.ModelChoiceField(queryset=AwardType.objects.filter(awarded_by__members=True), label='Select Award', required=False)
+    image_id = forms.IntegerField(widget=forms.HiddenInput())
+    competition_id = forms.IntegerField(widget=forms.HiddenInput())
+
+MemberAwardFormSet = formset_factory(MemberAwardForm, extra=0)

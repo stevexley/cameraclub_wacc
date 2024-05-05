@@ -1,89 +1,107 @@
 {% extends "main/base.html" %}
 {% block content %}
   <div class="container">
-    <div class="row">
-      <h2>{{ competition.event.name }}</h1>
-        <div class="d-grid gap-2 d-md-block">
-          {% for comp in competition.event.competition_set.all %}
-          <a class="btn btn-outline-primary" href="{% url 'competition_awards' comp.id %}" role="button">
-            {% if 'Open' in comp.type.type %}
+    <h2>{{ competition.event.name }}</h2>
+    <div class="d-grid gap-2 d-md-block">
+      {% for comp in competition.event.competition_set.all %}
+        <a class="btn btn-outline-primary"
+           href="{% url 'competition_awards' comp.id %}"
+           role="button">
+          {% if 'Open' in comp.type.type %}
             {{ comp.type }}
-            {% else%}
+          {% else %}
             {{ comp.type }} - {{ comp.subject }}
-            {% endif %}
-          </a>
-          {% endfor %}
-        </div>
-        <h1 class="mt-3">{% if 'Open' in competition.type.type %}
-          {{ competition.type }}
-          {% else%}
-          {{ competition.type }} - {{ competition.subject }}
           {% endif %}
-        </h1>
-        {% if images %}
+        </a>
+      {% endfor %}
+    </div>
+    <div>
+      <h1 class="mt-3">
+        {% if 'Open' in competition.type.type %}
+          {{ competition.type }}
+        {% else %}
+          {{ competition.type }} - {{ competition.subject }}
+        {% endif %}
+      </h1>
+    </div>
+    <div>
+      {% if images %}
         <div>
-        <h3>Awarded Images<h4>
+          <h3>Awarded Images</h3>
           <div class="col">
             <ul class="image-gallery">
               {% for image in images %}
                 {% if image.photo %}
-                {% include "main/includes/gallery_items.html" %}
+                  {% include "main/includes/gallery_items.html" %}
                 {% endif %}
               {% endfor %}
             </ul>
           </div>
         {% endif %}
-
-      <div class="d-flex">
-        {% if judge_awards.all %}
-        <div>
-        <h3>Judge's Awards<h4>
-          {% if competition.judge %}
-          <h4>Awarded by {{ competition.judge }}
-          {% endif %}
-        <table class="table table-hover wacc-table">
-          <thead>
-            <th scope="col">Award</th>
-            <th scope="col">Image Name</th>
-            <th scope="col">Author</th>
-          </thead>
-          <tbody>
-          {% for award in judge_awards %}
-            <tr>
-              <td>{{ award.type.name }}</td>
-              <td>{{ award.image.title }}</td>
-              <td>{{ award.image.author }}</td>
-            </tr>
-          {% endfor%}
-          </tbody>
-        </table>
-        {% else %}
-        <h4>No Judge's Awards</h4>
       </div>
+      <div>
+        {% if judge_awards.all %}
+          <div class="col">
+            <h3>Judge's Awards</h3>
+            {% if competition.judge %}<h4>Awarded by {{ competition.judge }}</h4>{% endif %}
+            <table class="table table-hover wacc-table">
+              <thead>
+                <th scope="col">Award</th>
+                <th scope="col">Image Name</th>
+                <th scope="col">Author</th>
+              </thead>
+              <tbody>
+                {% for award in judge_awards %}
+                  <tr>
+                    <td>{{ award.type.name }}</td>
+                    <td>{{ award.image.title }}</td>
+                    <td>{{ award.image.author }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <h4>No Judge's Awards</h4>
+          </div>
+        {% endif %}
+        {% if perms.main.change_competition %}
+          <a class="btn btn-primary btn-block"
+             href="{% url 'edit_judge_awards' competition.id %}">Edit Judge Awards</a>
         {% endif %}
         {% if member_awards.all %}
-        <div>
-        <h3>Member's Awards<h4>
-          <table class="table table-hover wacc-table">
-            <thead>
-              <th scope="col">Award</th>
-              <th scope="col">Image Name</th>
-              <th scope="col">Author</th>
-            </thead>
-            <tbody>
-            {% for award in member_awards %}
-              <tr>
-                <td>{{ award.type.name }}</td>
-                <td>{{ award.image.title }}</td>
-                <td>{{ award.image.author }}</td>
-              </tr>
-            {% endfor%}
-            </tbody>
-          </table>
-        {% else %}
-        <h4>No Members' Awards</h4>
+          <div class="row">
+            <div class="col">
+              <h3>Member's Awards</h3>
+              <table class="table table-hover wacc-table">
+                <thead>
+                  <th scope="col">Award</th>
+                  <th scope="col">Image Name</th>
+                  <th scope="col">Author</th>
+                </thead>
+                <tbody>
+                  {% for award in member_awards %}
+                    <tr>
+                      <td>{{ award.type.name }}</td>
+                      <td>{{ award.image.title }}</td>
+                      <td>{{ award.image.author }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <h4>No Members' Awards</h4>
+            {% endif %}
+            {% if perms.main.change_competition %}
+              <a class="btn btn-primary btn-block"
+                 href="{% url 'edit_member_awards' competition.id %}">Edit Member Awards</a>
+            {% endif %}
+          </div>
+          {% if perms.main.change_competition %}
+          <a class="btn btn-primary btn-block"
+             href="{% url 'competition_add_images' competition.id %}">Add Images</a>
+          {% endif %}
         </div>
-        {% endif %}
       </div>
     </div>
-{% endblock %}
+  </div>
+  {% endblock content %}
