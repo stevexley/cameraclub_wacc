@@ -83,6 +83,9 @@ class Member(models.Model):
     def __str__(self):
         return self.person.firstname + " " + self.person.surname
     
+    class Meta:
+        ordering = ["person__firstname"]
+    
 class Payment(models.Model):
     '''money paid by a member, for use by the Treasurer'''
     id = models.AutoField(primary_key=True)

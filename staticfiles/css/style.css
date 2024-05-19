@@ -1,5 +1,9 @@
 @import "bootstrap.min.css";
 
+#black-bg {
+    background-color: black !important;
+}
+
 #message-container {
     position: fixed;
     top: 50px;
@@ -7,6 +11,63 @@
     right: 0;
     z-index: 1000; /* Adjust the z-index to ensure it's on top of other content */
     padding: 20px;
+}
+
+.carousel-item div .hidden {
+    width: 0px;
+    height: 0px;
+    color: rgba(0,0,0,0);
+}
+
+.navbar-light .navbar-brand {
+    color: rgba(98,06,19, .9)
+}
+
+.navbar-light .navbar-brand:focus,
+.navbar-light .navbar-brand:hover {
+    color: rgba(98,06,19, .9)
+}
+
+.navbar-light .navbar-nav .nav-link {
+    color: rgba(98,06,19, .5)
+}
+
+.navbar-light .navbar-nav .nav-link:focus,
+.navbar-light .navbar-nav .nav-link:hover {
+    color: rgba(1, 0, 098,06,19, .7)
+}
+
+.navbar-light .navbar-nav .nav-link.disabled {
+    color: rgba(98,06,19, .3)
+}
+
+.navbar-light .navbar-nav .active>.nav-link,
+.navbar-light .navbar-nav .nav-link.active,
+.navbar-light .navbar-nav .nav-link.show,
+.navbar-light .navbar-nav .show>.nav-link {
+    color: rgba(98,06,19, .9)
+}
+
+.navbar-light .navbar-toggler {
+    color: rgba(98,06,19, .5);
+    border-color: rgba(98,06,19, .1)
+}
+
+.navbar-light .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%280, 0, 0, 0.5%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e")
+}
+
+.navbar-light .navbar-text {
+    color: rgba(98,06,19, .5)
+}
+
+.navbar-light .navbar-text a {
+    color: rgba(98,06,19, .9)
+}
+
+.navbar-light .navbar-text a:focus,
+.navbar-light .navbar-text a:hover {
+    color: rgba(98,06,19, .9)
 }
 
 .image-gallery {
@@ -18,12 +79,12 @@
 .image-gallery > li {
     flex: 1 1 auto;
     list-style-type: none;
-    height: 240px;
+    height: 120px;
     cursor: pointer;
     position: relative;
 }
 
-.image-gallery li img {
+.image-gallery li a {
     object-fit: cover;
     width: 100%;
     height: 100%;
@@ -47,6 +108,7 @@
     transition: all 0.1s 0.1s ease-in-out;
     color: #fff;
     border-radius: 5px;
+    font-size: 9pt;
     /* center overlay text 
     display: flex;
     align-items: center;
@@ -65,12 +127,33 @@
     margin-right: 4px;
 }
 
-.modal img {
-    width: 100%;
-    height: 100%; 
-    object-fit: contain;
+.modal-dialog {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}  
+
+.modal-content {
+    max-width: 95vw;
+    width: auto; 
 }
 
+.-modal-show .modal-dialog {
+}
+
+.wacc-modal-body img {
+    max-width: 95vw; /* Ensure image doesn't exceed container's width */
+    max-height: 95vh; /* Ensure image doesn't exceed container's height */
+    padding: 1em;
+}
+
+.wacc-table td {
+    font-size: 10pt;
+}
+
+.wacc-table th {
+    font-size: 12pt;
+}
 /*img .fullpic {
     object-fit: none;
 } */
@@ -212,7 +295,38 @@ a.divLink {
     background-color: bs-dark;
 }*/
 
+.carousel-control-prev {
+    border: 0px;
+    background: rgba(0,0,0,0);
+    color: rgba(0,0,0,0);
+}
+
+.carousel-control-next {
+    border: 0px;
+    background: rgba(0,0,0,0);
+    color: rgba(0,0,0,0);
+}
+
+#wacc-hidden-text {
+    color: rgba(0,0,0,0);
+}
+
 @media (min-width: 768px) {
+    .image-gallery > li {
+        height: 240px;
+    }
+
+    .overlay {
+        font-size: 14pt;
+    }
+
+    .wacc-table td {
+        font-size: 12pt;
+    }
+    
+    .wacc-table th {
+        font-size: 16pt;
+    }
     .event-list > li {
         position: relative;
         display: block;

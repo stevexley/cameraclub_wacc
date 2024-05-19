@@ -1,37 +1,38 @@
-{% extends 'main/base.html' %}
+{% extends "main/base.html" %}
 {% load static %}
 
 {% block content %}
 <div class="container">
     {% now "Y-m-d" as todays_date %}
-    <div class="col-10">
         <h1>{{ member.person }}</h1>
         <h4>Membership Details</h4>
         <dl class="row">
           <dt class="col-sm-3">Joined Date</dt>
-          <dd class="col-sm-9">{{ member.joined }}<dd>
+          <dd class="col-sm-9">{{ member.joined }}</dd>
           <dt class="col-sm-3">Current Member</dt>
-          <dd class="col-sm-9">{{ member.current }}<dd>
+          <dd class="col-sm-9">{{ member.current }}</dd>
         </dl>
         <h4>Member Details</h4>
         <dl class="row">
           <dt class="col-sm-3">Phone Number</dt>
-          <dd class="col-sm-9">{{ member.person.mobile }}<dd>
+          <dd class="col-sm-9">{{ member.person.mobile }}</dd>
           <dt class="col-sm-3">Email</dt>
-          <dd class="col-sm-9">{{ member.person.user.email }}<dd>
+          <dd class="col-sm-9">{{ member.person.user.email }}</dd>
         </dl>
         <div>
         {% if member.person.image_set.all %}
+            {% for entries in images.values %}
+            <h2>{{ entries.year }}</h2>
             <ul class="image-gallery">
-                {% for image in images %}
+                {% for image in entries.images %}
                     {% include "main/includes/gallery_items.html" %}
                 {% endfor %}
             </ul>
+            {% endfor %}
         {% endif %}
         </div>
-    </div>
 </div>    
-{% endblock %}
+{% endblock content %}
 
 {% block scripts %}
-{% endblock %}
+{% endblock scripts %}

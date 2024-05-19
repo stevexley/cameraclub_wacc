@@ -13,7 +13,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormMixin
 from django.views.generic import CreateView, UpdateView, TemplateView
 from django.forms import inlineformset_factory
-from django.db.models import Sum, Max
+from django.db.models import Sum, Max, Min
 
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
     Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter
@@ -29,8 +29,24 @@ class ProfileView(PermissionRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         person = context['member'].person
-        context["images"] = Image.objects.filter(author = person,
-                                                 ).order_by('-competitions__judging_closes')
+        
+        images = {}
+        
+        #Get oldest image
+        oldest_entry = Image.objects.filter(author=person).aggregate(Min('competitions__entries_close'))
+        oldest_entry_date = oldest_entry['competitions__entries_close__min']
+        if oldest_entry_date:
+            firstyear =  oldest_entry_date.year
+        
+        for year in range(datetime.now().year, (firstyear - 1), -1):
+            entries = {
+                'year': year,
+                'images': Image.objects.filter(author = person,
+                                                competitions__judging_closes__year = year
+                                                ).order_by('competitions__judging_closes')
+            }
+            images[year] = entries
+            context['images'] = images
         return context
     
     
@@ -42,7 +58,7 @@ class MemberListView(PermissionRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['committee'] =  User.objects.filter(groups__name='Committee')     
+        context['committee'] =  User.objects.filter(groups__name='Committee').order_by('person__position__order')     
         return context
     
 
