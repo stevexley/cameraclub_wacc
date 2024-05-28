@@ -329,7 +329,7 @@ class EnterCompetitionView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Image  
     form_class = ImageForm
     template_name = 'main/image_upload_form.html'
-    success_url = '/events/' + str(datetime.now().year) + '#today_bookmark'
+    success_url = '/events/' + str(datetime.now().year) + '/#today_bookmark'
     success_message = "Entry Uploaded"
 
     def get_initial(self):
@@ -423,9 +423,9 @@ class MemberVotingView(LoginRequiredMixin, View):
                                 )   
                         check = None
             messages.success(request, "Votes lodged")
-            return redirect('events')
+            return redirect('events_now', year=datetime.now().year )
         except (Competition.DoesNotExist, VoteOption.DoesNotExist):
-            return redirect('events')
+            return redirect('events_now', year=datetime.now().year )
 
 @permission_required("main.change_competition")
 def count_votes(competition):
@@ -749,7 +749,7 @@ class AddToGalleryView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Image  
     form_class = ImageForm
     template_name = 'main/image_upload_form.html'
-    success_url = '/events/' + str(datetime.now().year) + '#today_bookmark'
+    success_url = '/events/' + str(datetime.now().year) + '/#today_bookmark'
     success_message = "Image Uploaded to Gallery"
 
     def get_initial(self):

@@ -39,4 +39,39 @@
 </div>
 {% endblock content %}
 {% block scripts %}
+<script>
+    document.onkeydown = function (e) {
+        e = e || window.event;
+        var activeModal = document.querySelector('.modal.show'); // Get the currently visible modal
+
+        if (activeModal) {
+            var activeModalId = activeModal.getAttribute('id'); // Get the ID of the active modal
+            var imageId = activeModalId.replace('imageModal', ''); // Extract the image ID
+
+            if (e.keyCode === 37) {
+                // Left arrow key pressed
+                var prevButton = document.getElementById('prev-' + imageId);
+                if (prevButton) {
+                    showModal(activeModal, prevButton.getAttribute('data-bs-target'));
+                }
+            } else if (e.keyCode === 39) {
+                // Right arrow key pressed
+                var nextButton = document.getElementById('next-' + imageId);
+                if (nextButton) {
+                    showModal(activeModal, nextButton.getAttribute('data-bs-target'));
+                }
+            }
+        }
+    };
+
+    function showModal(currentModal, modalId) {
+        // Hide the current modal
+        var bootstrapCurrentModal = bootstrap.Modal.getInstance(currentModal);
+        bootstrapCurrentModal.hide();
+        
+        // Show the target modal
+        var targetModal = new bootstrap.Modal(document.querySelector(modalId));
+        targetModal.show();
+    }
+</script>
 {% endblock scripts %}

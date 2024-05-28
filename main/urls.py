@@ -13,6 +13,7 @@ urlpatterns = [
     path('newsletters/<int:year>/', NewslettersView.as_view(), name='news'),
     path('profile/<int:pk>', ProfileView.as_view(), name='profile'),
     path('events/<int:year>/', EventsView.as_view(), name='events'),
+    path('events/<int:year>/#today_bookmark', EventsView.as_view(), name='events_now'),
     path('events/', EventsView.as_view(), name='events'),
     path('event/<int:pk>', EventDetailView.as_view(), name='event'),
     path('event/<int:pk>/AddFile', UploadEventFileView.as_view(), name='event_add_file'),

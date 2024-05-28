@@ -8,38 +8,40 @@
 </li>
 <!-- Modal for the image -->
 <div class="modal fade" id="imageModal{{ image.id }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content modal-content-centrered">
-          <div class="wacc-modal-body">
-                <img src="{{ image.photo.url }}" alt="Image Missing, please contact the webmaster">
-                {% with current_pic=forloop.counter %}
-                <div class="m-1">
+  <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content modal-content-centered">
+          <div class="wacc-modal-body-voting">
+              <img src="{{ image.photo.url }}" alt="Image Missing, please contact the webmaster">
+              {% with current_pic=forloop.counter %}
+              <div class="m-1">
                   <div>
-                    {% if current_pic > 1 %}
-                      {% with prev=forloop.counter|add:"-1" %}
-                        {% with prev_image_id=image_index|slice:prev|last %}
-                          <a class="btn btn-outline-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ prev_image_id }}">Previous</a>
-                        {% endwith %}
-                      {% endwith %}
-                    {% endif %}
-                    {% for image in images %}
-                      {% if forloop.counter == current_pic %}
-                        <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}">{{ forloop.counter }}</a>
-                      {% else %}
-                        <a class="btn" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}">{{ forloop.counter }}</a>
+                      {% if current_pic > 1 %}
+                          {% with prev=forloop.counter|add:"-1" %}
+                              {% with prev_image_id=image_index|slice:prev|last %}
+                                  <a id="prev-{{ image.id }}" class="btn btn-outline-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ prev_image_id }}">Previous</a>
+                              {% endwith %}
+                          {% endwith %}
                       {% endif %}
-                    {% endfor %}
-                    {% if current_pic < images|length %}
-                      {% with next=forloop.counter|add:"1" %}
-                        {% with next_image_id=image_index|slice:next|last %}
-                          <a class="btn btn-outline-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ next_image_id }}">Next</a>
-                        {% endwith %}
-                      {% endwith %}
-                    {% endif %}
+                      {% for image in images %}
+                          {% if forloop.counter == current_pic %}
+                              <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}">{{ forloop.counter }}</a>
+                          {% else %}
+                              <a class="btn" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}">{{ forloop.counter }}</a>
+                          {% endif %}
+                      {% endfor %}
+                      {% if current_pic < images|length %}
+                          {% with next=forloop.counter|add:"1" %}
+                              {% with next_image_id=image_index|slice:next|last %}
+                                  <a id="next-{{ image.id }}" class="btn btn-outline-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ next_image_id }}">Next</a>
+                              {% endwith %}
+                          {% endwith %}
+                      {% endif %}
                   </div>
-                </div>
-                {% endwith %}
-            </div>
-        </div>
-    </div>
+              </div>
+              {% endwith %}
+          </div>
+      </div>
+  </div>
 </div>
+
+

@@ -158,6 +158,12 @@
     padding: 1em;
 }
 
+.wacc-modal-body-voting img {
+    max-width: 95vw; /* Ensure image doesn't exceed container's width */
+    max-height: 85vh; /* Ensure image doesn't exceed container's height */
+    padding: 1em;
+}
+
 .wacc-table td {
     font-size: 10pt;
 }

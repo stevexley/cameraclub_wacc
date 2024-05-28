@@ -98,11 +98,11 @@
                     </div>
                 </div>
             </div>
-            <button id="wacc-hidden-text" class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
-                <span class="visually-hidden">Previous</span>
+            <button id="carousel-prev" class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+                <span class="visually-hidden"></span>
             </button>
-            <button id="wacc-hidden-text" class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
-                <span class="visually-hidden">Next</span>
+            <button id="carousel-next" class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
+                <span class="visually-hidden"></span>
             </button>
         </div>
     </div>
@@ -125,61 +125,71 @@
     // This script listens for 1 2 or 3 being pressed and adds gold, silver or bronze awards to 
     // the image showing in the carousel
     document.addEventListener('keydown', function(event) {
-        if (event.key === '1' || event.key === '2' || event.key === '3') { 
-            
-            var compPk = {{ competition.id }};
-            // Find the active carousel item
-            var activeItem = document.querySelector('.carousel-item.active');
-            if (!activeItem) return; // Exit if there's no active carousel item
+        if (event.key === '1' || event.key === '2' || event.key === '3' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            if (event.key === '1' || event.key === '2' || event.key === '3') { 
+                
+                var compPk = {{ competition.id }};
+                // Find the active carousel item
+                var activeItem = document.querySelector('.carousel-item.active');
+                if (!activeItem) return; // Exit if there's no active carousel item
 
-            // get the image.id and set it to imagePk 
-            var imagePk = activeItem.getAttribute('data-image-id');
+                // get the image.id and set it to imagePk 
+                var imagePk = activeItem.getAttribute('data-image-id');
 
-            // Find the corresponding elements within the active carousel item
-            var targetElementId;
-            var xhr = new XMLHttpRequest();
-            switch (event.key) {
-                case '1':
-                    targetElementId = 'Gold';
-                    awardType = 'gold';
-                    break;
-                case '2':
-                    targetElementId = 'Silver';
-                    awardType = 'silver';
-                    break;
-                case '3':
-                    targetElementId = 'Bronze';
-                    awardType = 'bronze';
-                    break;
-            }
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', `/competitions/${compPk}/award_${awardType}/${imagePk}`, true); // trigger functions via URL
-            xhr.onload = function () {
-                if (xhr.status == 200) {
-                    console.log(xhr.responseText); // Log the response from the server
+                // Find the corresponding elements within the active carousel item
+                var targetElementId;
+                var xhr = new XMLHttpRequest();
+                switch (event.key) {
+                    case '1':
+                        targetElementId = 'Gold';
+                        awardType = 'gold';
+                        break;
+                    case '2':
+                        targetElementId = 'Silver';
+                        awardType = 'silver';
+                        break;
+                    case '3':
+                        targetElementId = 'Bronze';
+                        awardType = 'bronze';
+                        break;
                 }
-            };
-            xhr.send();
 
-            var targetElement1 = activeItem.querySelector('#' + targetElementId + 'H2');
-            var targetElement = activeItem.querySelector('#' + targetElementId);
-            
-            // Toggle the classes on the corresponding elements
-            // Make the correct caption visible
-            if (targetElement1 && targetElement) {
-                targetElement1.classList.toggle('hidden');
-                targetElement.classList.toggle('hidden');
-                targetElement.classList.toggle('carousel-caption');
-                targetElement.classList.toggle('badge');
-                targetElement.classList.toggle('rounded-pill');
-                targetElement.classList.toggle('bg-secondary');
-                targetElement.classList.toggle('bg-opacity-50');
-                targetElement.classList.toggle('d-md-block');
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', `/competitions/${compPk}/award_${awardType}/${imagePk}`, true); // trigger functions via URL
+                xhr.onload = function () {
+                    if (xhr.status == 200) {
+                        console.log(xhr.responseText); // Log the response from the server
+                    }
+                };
+                xhr.send();
+
+                var targetElement1 = activeItem.querySelector('#' + targetElementId + 'H2');
+                var targetElement = activeItem.querySelector('#' + targetElementId);
+                
+                // Toggle the classes on the corresponding elements
+                // Make the correct caption visible
+                if (targetElement1 && targetElement) {
+                    targetElement1.classList.toggle('hidden');
+                    targetElement.classList.toggle('hidden');
+                    targetElement.classList.toggle('carousel-caption');
+                    targetElement.classList.toggle('badge');
+                    targetElement.classList.toggle('rounded-pill');
+                    targetElement.classList.toggle('bg-secondary');
+                    targetElement.classList.toggle('bg-opacity-50');
+                    targetElement.classList.toggle('d-md-block');
+                }
+            } 
+            if (event.key === 'ArrowLeft') {
+                // Left arrow key pressed
+                document.getElementById('carousel-prev').click();
+            } else if (event.key === 'ArrowRight') {
+                // Right arrow key pressed
+                document.getElementById('carousel-next').click();
             }
         }
+
     });
-</script>
+    </script>
 
 </html>
 
