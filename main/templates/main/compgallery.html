@@ -94,12 +94,10 @@
             {% if perms.main.change_competition %}
               <a class="btn btn-primary btn-block"
                  href="{% url 'edit_member_awards' competition.id %}">Edit Member Awards</a>
+              <a class="btn btn-primary btn-block"
+                 href="{% url 'competition_add_images' competition.id %}">Add Images</a>
             {% endif %}
           </div>
-          {% if perms.main.change_competition %}
-          <a class="btn btn-primary btn-block"
-             href="{% url 'competition_add_images' competition.id %}">Add Images</a>
-          {% endif %}
         </div>
       </div>
     </div>

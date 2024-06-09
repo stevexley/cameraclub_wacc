@@ -29,6 +29,7 @@ urlpatterns = [
     path('competitions/<int:comp_pk>/award_bronze/<image_pk>', award_bronze, name='award_bronze'),
     path('competitions/<int:pk>/enter/', EnterCompetitionView.as_view(), name='enter_competition'),
     path('competitions/<int:competition_id>/vote/', MemberVotingView.as_view(), name='competition_vote'),
+    path('competitions/<int:competition_id>/count/', count_up_votes, name='count_votes'),
     path('competitions/<int:pk>/addimages/', AddImagesToCompetitionView.as_view(), name='competition_add_images'),
     path('competitions/<int:pk>/judge/', JudgeJudgingView.as_view(), name='competition_judge'),
     path('competitions/<int:pk>/awards/', CompAwardsView.as_view(), name='competition_awards'),

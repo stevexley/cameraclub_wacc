@@ -4,7 +4,7 @@ from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 from django.contrib.messages.views import SuccessMessageMixin
 from django.views import View
 from django.views.generic.list import ListView
@@ -427,8 +427,11 @@ class MemberVotingView(LoginRequiredMixin, View):
         except (Competition.DoesNotExist, VoteOption.DoesNotExist):
             return redirect('events_now', year=datetime.now().year )
 
-@permission_required("main.change_competition")
+def user_has_permission(user):
+    return user.has_perm("main.change_competition")
+
 def count_votes(competition):
+
     # Get all the images for the given competition
     images = competition.images.all()
 
@@ -437,51 +440,62 @@ def count_votes(competition):
     for image in images:
         total_points = image.vote_set.aggregate(total_points=Sum('vote__points'))['total_points']
         image_points[image] = total_points or 0
-
+    
     # Sort images based on total points in descending order
     sorted_images = sorted(image_points.items(), key=lambda x: x[1], reverse=True)
-
+    
     # Initialize variables to keep track of positions and tied counts
     positions = {}
     current_position = 1
     tied_count = 0
     previous_votes = None
-    
+       
     # Iterate through sorted items to assign positions
     for index, (image, votes) in enumerate(sorted_images):
-        if votes != previous_votes:
-            # If the current number of votes is different from the previous one,
-            # update the current position and reset tied count
-            current_position += tied_count
-            tied_count = 0
-        if current_position <= 6:
-            # Assign position to the person
-            positions[image] = current_position
-        tied_count += 1
-        previous_votes = votes
-    
+        if votes > 0:
+            if votes != previous_votes:
+                # If the current number of votes is different from the previous one,
+                # update the current position and reset tied count
+                current_position += tied_count
+                tied_count = 0
+            if current_position <= 6:
+                # Assign position to the person
+                positions[image] = current_position
+            tied_count += 1
+            previous_votes = votes
+                
         # Assign awards to the top 6 scoring images
         # Create an Award instance for the images with positions
     for image, position in positions.items():
         if position == 1:
-            awardtype = AwardType.objects.get(name = "1st")
+            awardtype = AwardType.objects.get(name = "1st place")
             award = Award.objects.create(image=image, type=awardtype, competition=competition)
         elif position == 2:
-            awardtype = AwardType.objects.get(name = "2nd")
+            awardtype = AwardType.objects.get(name = "2nd place")
             award = Award.objects.create(image=image, type=awardtype, competition=competition)
         elif position == 3:
-            awardtype = AwardType.objects.get(name = "3rd")
+            awardtype = AwardType.objects.get(name = "3rd place")
             award = Award.objects.create(image=image, type=awardtype, competition=competition)
         elif position == 4:
-            awardtype = AwardType.objects.get(name = "4th")
+            awardtype = AwardType.objects.get(name = "4th place")
             award = Award.objects.create(image=image, type=awardtype, competition=competition)
         elif position == 5:
-            awardtype = AwardType.objects.get(name = "5th")
+            awardtype = AwardType.objects.get(name = "5th place")
             award = Award.objects.create(image=image, type=awardtype, competition=competition)
         elif position == 6:
-            awardtype = AwardType.objects.get(name = "6th")
+            awardtype = AwardType.objects.get(name = "6th place")
             award = Award.objects.create(image=image, type=awardtype, competition=competition)
     return 
+
+@login_required
+@user_passes_test(user_has_permission)
+def count_up_votes(request, competition_id):
+    competition = get_object_or_404(Competition, id=competition_id)
+    print(competition)
+    count_votes(competition)
+    url = reverse('competition_awards', kwargs={'pk': competition_id})
+    return redirect(url)
+    
 
 class JudgeJudgingView(PermissionRequiredMixin, DetailView):
     '''Slideshow and list of images in competition'''
@@ -522,11 +536,13 @@ class CompAwardsView(DetailView):
             If it has closed count the votes, create the awards and add them to the context'''
             competition = context['competition']
             if timezone.make_naive(competition.judging_closes) < timezone.make_naive(timezone.now()):
-                count_votes(competition)
-                context['member_awards'] = Award.objects.filter(competition__id = self.kwargs['pk'],
+                try:
+                    count_votes(competition)
+                    context['member_awards'] = Award.objects.filter(competition__id = self.kwargs['pk'],
                                                         type__awarded_by__members = True
                                                         ).order_by('-type__points')
-            
+                except:
+                    pass            
         context['judge_awards'] = Award.objects.filter(competition__id = self.kwargs['pk'],
                                                         type__awarded_by__judge = True
                                                         ).order_by('-type__points')
