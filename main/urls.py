@@ -8,6 +8,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('members', MemberListView.as_view(), name='members'),
+    path('members/add', add_member, name='add_member'),
     path('', MainGalleryView.as_view(), name = 'main-gallery'),
     path('aboutus', AboutUsView.as_view(), name='aboutus'),
     path('newsletters/<int:year>/', NewslettersView.as_view(), name='news'),

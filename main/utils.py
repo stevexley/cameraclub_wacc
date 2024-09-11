@@ -205,7 +205,16 @@ def move_comps_to_1st(request):
     return HttpResponse("Competition Dates Set to 1st")
 
 def award_gold(request, comp_pk, image_pk):
-    '''Award a gold judge's award to the image in the comp'''
+    '''Award a gold judge's award to the image in the comp
+    Remove any other judge's awards if they exist'''
+    awards = Award.objects.filter(
+        image_id = image_pk,
+        type__awarded_by__awarded_by = "judge's award",
+        competition_id = comp_pk
+    )
+    if awards:
+        for award in awards:
+            award.delete()
     gold = Award.objects.create(
         image_id = image_pk,
         type_id = 1,
@@ -216,6 +225,14 @@ def award_gold(request, comp_pk, image_pk):
 
 def award_silver(request, comp_pk, image_pk):
     '''Award a silver judge's award to the image in the comp'''
+    awards = Award.objects.filter(
+        image_id = image_pk,
+        type__awarded_by__awarded_by = "judge's award",
+        competition_id = comp_pk
+    )
+    if awards:
+        for award in awards:
+            award.delete()
     silver = Award.objects.create(
         image_id = image_pk,
         type_id = 2,
@@ -226,6 +243,15 @@ def award_silver(request, comp_pk, image_pk):
 
 def award_bronze(request, comp_pk, image_pk):
     '''Award a silver judge's award to the image in the comp'''
+    awards = Award.objects.filter(
+        image_id = image_pk,
+        type__awarded_by__awarded_by = "judge's award",
+        competition_id = comp_pk
+    )
+    if awards:
+        for award in awards:
+            award.delete()
+            
     bronze = Award.objects.create(
         image_id = image_pk,
         type_id = 3,

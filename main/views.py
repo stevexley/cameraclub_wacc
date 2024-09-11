@@ -495,7 +495,8 @@ def count_up_votes(request, competition_id):
     count_votes(competition)
     url = reverse('competition_awards', kwargs={'pk': competition_id})
     return redirect(url)
-    
+
+ 
 
 class JudgeJudgingView(PermissionRequiredMixin, DetailView):
     '''Slideshow and list of images in competition'''
@@ -631,7 +632,7 @@ class JudgeAwardUpdateView(PermissionRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         competition_id = self.kwargs.get('pk')
         competition = Competition.objects.get(pk=competition_id)
-        images = competition.images.all()
+        images = competition.images.all().order_by('id')
         formset_data = []
         for image in images:
             award = Award.objects.filter(image=image, 
@@ -661,11 +662,13 @@ class JudgeAwardUpdateView(PermissionRequiredMixin, TemplateView):
                 existing_award = None
                 if award_type == None:
                 # Delete existing award if it exists
-                    Award.objects.filter(
-                        image_id=image_id,
-                        competition=competition,
-                        type__awarded_by__judge=True
-                        ).delete()
+                    awards = Award.objects.filter(
+                                image_id=image_id,
+                                competition=competition,
+                                type__awarded_by__judge=True
+                                )
+                    for award in awards:
+                        award.delete()
                 else:
                     # Get existing award
                     existing_award = Award.objects.filter(
@@ -673,12 +676,22 @@ class JudgeAwardUpdateView(PermissionRequiredMixin, TemplateView):
                     competition=competition,
                     type__awarded_by__judge=True
                     ).first()
+                    # remove any extra awards
+                    awards = Award.objects.filter(
+                                image_id=image_id,
+                                competition=competition,
+                                type__awarded_by__judge=True
+                                ).exclude(
+                                    id = existing_award.id
+                                )
+                    for award in awards:
+                        award.delete()
                 if existing_award:
                     # Update existing award
                     existing_award.type = award_type
                     existing_award.save()
                 elif award_type:
-                    # Create new award from the judge if there is an award
+                    # Create new award from the judge if there is not an existing award
                     Award.objects.create(
                         image_id=image_id,
                         competition=competition,
@@ -698,7 +711,7 @@ class MemberAwardUpdateView(PermissionRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         competition_id = self.kwargs.get('pk')
         competition = Competition.objects.get(pk=competition_id)
-        images = competition.images.all()
+        images = competition.images.all().order_by('id')
         formset_data = []
         for image in images:
             award = Award.objects.filter(image=image, 
@@ -790,7 +803,33 @@ class AddToGalleryView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['gallery'] = Gallery.objects.get(id=self.kwargs['gallery_id'])
         return context
-    
+
+'''View which combines 3 forms to add info to User, Person and Member models in one go'''
+def add_member(request):
+    if request.method == "POST":
+        uform = UserForm(request.POST, instance=User())
+        pform = PersonForm(request.POST, instance=Person())
+        mform = MemberForm(request.POST, instance=Member())
+        if uform.is_valid() and pform.is_valid() and mform.is_valid():
+            new_user = uform.save(commit=False)
+            new_user.username = uform.cleaned_data['first_name'] + "_" + uform.cleaned_data['last_name']
+            new_user = uform.save()
+            new_person = pform.save(commit=False)
+            new_person.user = new_user
+            new_person.firstname = new_user.first_name
+            new_person.surname = new_user.last_name
+            new_person.save()
+            new_member = mform.save(commit=False)
+            new_member.person = new_person
+            new_member.save()
+        return HttpResponseRedirect(reverse_lazy('members'))
+    else:
+        uform = UserForm(instance=User())
+        pform = PersonForm(instance=Person())
+        mform = MemberForm(instance=Member())
+    context = {'user_form': uform, 'person_form': pform, 'member_form': mform}
+    return render(request, 'main/add_member.html', context)
+
 class AnnualTotalsView(PermissionRequiredMixin, ListView):
     '''This page lists all people who have entered competitions and total points by year.'''
     permission_required = "main.change_competition"

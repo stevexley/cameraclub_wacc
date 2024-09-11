@@ -4,7 +4,7 @@ from django import forms
 from django.forms import formset_factory, BaseFormSet, BaseInlineFormSet, inlineformset_factory
 from django.forms.widgets import SplitDateTimeWidget
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from .models import Image, Competition, Subject, CompetitionType, Judge, Event, Award, AwardType, Person
+from .models import Image, Competition, Subject, CompetitionType, Judge, Event, Award, AwardType, Person, User, Member
 from .utils import setTitleCase, checkWidth, checkHeight, checkOneEntry, checkMono
 
 class EventUploadForm(forms.ModelForm):
@@ -35,6 +35,8 @@ class ImageForm(forms.ModelForm):
             visible.field.widget.attrs['placeholder'] = visible.field.label
             visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
         self.fields['print'].widget.attrs['class'] = 'form-check-input form-check-inline'
+        self.fields['photo'].widget.attrs['class'] = 'form-control form-control-lg'
+        self.fields['photo'].widget.attrs['id'] = 'fileInput'
         self.fields['author'].empty_label = '-Select Author-'
         if pk:
             competition = Competition.objects.get(id=pk)
@@ -170,3 +172,51 @@ class MemberAwardForm(forms.Form):
     competition_id = forms.IntegerField(widget=forms.HiddenInput())
 
 MemberAwardFormSet = formset_factory(MemberAwardForm, extra=0)
+
+class UserForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+            visible.field.widget.attrs['placeholder'] = visible.field.label
+            visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email')
+
+class PersonForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+            visible.field.widget.attrs['placeholder'] = visible.field.label
+            visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
+            
+    class Meta:
+        model = Person
+        exclude = ('user','firstname', 'surname')
+
+class MemberForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+            visible.field.widget.attrs['placeholder'] = visible.field.label
+            visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
+
+    class Meta:
+        model = Member
+        exclude = ('person', 'joined', 'current')
+
+class CompetitionJudgeForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+            visible.field.widget.attrs['placeholder'] = visible.field.label
+            visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
+    
+    class Meta:
+        model = Competition
+        fields = [ 'judge', ]

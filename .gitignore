@@ -1,6 +1,7 @@
 /.vscode
 /media
 /cameraclub/__pycache__
-/main/__pychche__
+/main/__pycache__
+/main/*/__pycache__
 /import.log
 /staticfiles

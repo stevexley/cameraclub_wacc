@@ -47,7 +47,7 @@ THIRD_PARTY_APPS = [
     'widget_tweaks'
 ]
 
-INSTALLED_APPS = DJANGO_APPS + MY_APPS + THIRD_PARTY_APPS
+INSTALLED_APPS = MY_APPS + DJANGO_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -87,11 +87,11 @@ WSGI_APPLICATION = 'cameraclub.wsgi.application'
 DATABASES = {
     'default': {
 		'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        	'NAME': 'wacc',
-		'USER': 'xxxxx',
-		'PASSWORD': 'xxxxxx',
+        'NAME': 'wacc',
+		'USER': 'steve',
+		'PASSWORD': 'flippers',
 		'HOST': 'localhost',
-       		'PORT': '',
+       	'PORT': '',
     }
 }
 
@@ -159,7 +159,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/'
 
 # TODO Replace this with a real email backend 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.mailersend.net'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'MS_1d1AaN@trial-3vz9dle69kngkj50.mlsender.net'
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = 'MS_1d1AaN@trial-3vz9dle69kngkj50.mlsender.net'
 
 TINYMCE_DEFAULT_CONFIG = {
     "height": 900,

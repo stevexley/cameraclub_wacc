@@ -29,5 +29,10 @@
                 {% endif %}
             {% endfor %}
         </table>
+        {% if perms.main.change_member %}
+            <div class="my-1">
+                <a class="btn btn-primary" href="{% url 'add_member' %}">Add New Member</a>
+            </div>
+        {% endif %}
     </div>
 {% endblock content %}
