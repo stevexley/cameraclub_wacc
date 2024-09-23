@@ -3,7 +3,7 @@
 {% block content %}
     <div class="container">
         {% now "Y-m-d" as todays_date %}
-        <div class="col-10">
+        <div class="col">
             <h1>{{ event.name }}</h1>
             <h3>{{ event.starts.date }} {{ event.starts|time:"H:i" }} - {{ event.ends|time:"H:i" }}</h3>
             {% if event.description %}<p>{{ event.description }}</p>{% endif %}
@@ -15,37 +15,48 @@
                             {% for competition in event.competition_set.all %}
                                 {% if 'Open' in competition.type.type %}
                                     <li class="list-group-item d-flex justify-content-between">
-                                        {{ competition.type }}
+                                        <h4>{{ competition.type }}</h4>
                                         {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" > todays_date and user.person.member.current and "igital" in competition.type.type %}
                                             <a class="btn btn-outline-primary ml-auto"
                                                href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
                                         {% endif %}
                                         {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type %}
                                             {% if user.person.member.current %}
-                                                <a class="btn btn-outline-primary ml-auto"
-                                                   href="{% url 'competition_vote' competition.id %}">Vote</a>
+                                            <div class="w-25">
+                                                <a class="btn btn-outline-primary float-right"
+                                                href="{% url 'competition_vote' competition.id %}">Vote</a>
+                                            </div>
                                             {% endif %}
-                                            {% if user.person.judge == competition.judge or user.person.position %}
-                                                <a class="btn btn-outline-primary ml-auto"
-                                                   href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                                            {% if user.person == competition.judge.person or user.person.position %}
+                                            <div class="w-25">
+                                            <a class="btn btn-outline-primary float-right"
+                                                href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                                            </div>
                                             {% endif %}
                                         {% endif %}
                                     </li>
                                 {% else %}
                                     <li class="list-group-item d-flex justify-content-between">
-                                        {{ competition.type }} - {{ competition.subject }}
+                                        <div>
+                                        <h4>{{ competition.type }} - {{ competition.subject }}</h4>
+                                        <h5>{{ competition.subject.description }}</h5>
+                                        </div>
                                         {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" > todays_date and user.person.member.current and "igital" in competition.type.type %}
                                             <a class="btn btn-outline-primary ml-auto"
                                                href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
                                         {% endif %}
                                         {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type %}
                                             {% if user.person.member.current %}
-                                                <a class="btn btn-outline-primary ml-auto"
+                                            <div class="w-25">
+                                                <a class="btn btn-outline-primary float-right"
                                                    href="{% url 'competition_vote' competition.id %}">Vote</a>
+                                            </div>
                                             {% endif %}
-                                            {% if user.person.judge == competition.judge or user.person.position %}
-                                                <a class="btn btn-primary ml-auto"
-                                                   href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                                            {% if user.person == competition.judge.person or user.person.position %}
+                                            <div class="w-25">
+                                            <a class="btn btn-outline-primary float-right"
+                                                href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                                            </div>
                                             {% endif %}
                                         {% endif %}
                                     </li>

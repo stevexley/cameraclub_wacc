@@ -2,9 +2,6 @@
 {% block content %}
     <div class="container">
         <h1>Images for {{ competition }}</h1>
-        <ol class="list-group list-group-numbered">
-            {% for image in images %}<li class="list-group-item">{{ image.title }} by {{ image.author }}</li>{% endfor %}
-        </ol>
         <hr>
         <div class="card">
             <div class="card-header"><h3>Add New Entry</h3></div>
@@ -28,7 +25,11 @@
                 {% endfor %}
                 <button class="btn btn-primary" type="submit">Add Image</button>
             </form>
+            </div>
         </div>
-        </div>
+        
+        <ol class="list-group list-group-numbered">
+            {% for image in images %}<li class="list-group-item">{{ image.title }} by {{ image.author }}</li>{% endfor %}
+        </ol>
     </div>
 {% endblock content %}5

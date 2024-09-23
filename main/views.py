@@ -514,6 +514,11 @@ class JudgeJudgingView(PermissionRequiredMixin, DetailView):
             if judge != self.object.judge:
                 raise Http404("You are not authorized to view this competition.")
         return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['blurb'] = Blurb.objects.get(name = 'Judging').contents
+        return context
 
 class CompAwardsView(DetailView):
     '''This displays the images and awards for a competition.'''

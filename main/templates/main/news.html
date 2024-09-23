@@ -31,10 +31,10 @@
             </a>
             {% else %}
             <img src="{{ letter.thumb.url }}" alt={{ letter.issue_date|date:"F"}} {{ letter.issue_date|date:"Y" }}>
-            <div>
-            {{ letter.issue_date|date:"F"}} {{ letter.issue_date|date:"Y" }}
-            </div>
             {% endif %}
+            <div>
+                {{ letter.issue_date|date:"F"}} {{ letter.issue_date|date:"Y" }}
+            </div>
         </div>
     {% endfor %}
     </div>

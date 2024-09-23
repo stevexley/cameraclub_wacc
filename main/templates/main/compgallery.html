@@ -16,11 +16,17 @@
       {% endfor %}
     </div>
     <div>
-      <h1 class="mt-3">
-        {% if 'Open' in competition.type.type %}
+      {% if 'Open' in competition.type.type %}
+        <h1 class="mt-3">
           {{ competition.type }}
+        </h1>
         {% else %}
+        <h1 class="mt-3">
           {{ competition.type }} - {{ competition.subject }}
+        </h1>
+        <h5>
+          {{ competition.subject.description }}
+        </h5>
         {% endif %}
       </h1>
     </div>

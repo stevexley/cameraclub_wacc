@@ -1,6 +1,6 @@
 <li>
   {% if image.photo %}
-    <img src="{{ image.photo.url }}" alt="{{ image.title }}">
+    <img loading="lazy" src="{{ image.photo.url }}" alt="{{ image.title }}">
   {% else %}
     <img src="" alt="{{ image.title }}"> <br/><i>Click to upload image</i>
   {% endif %}

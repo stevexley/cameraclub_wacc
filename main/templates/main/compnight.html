@@ -4,18 +4,24 @@
     <div class="row">
       <div class="col">
         {% for comp in competitions %}
+        <div class="mb-4">
         {% if forloop.first %}
         <h1>Competition Night, {{ comp.event.starts|date:"l jS \o\f F Y" }}</h1>
-        <div class="d-grid gap-2 mb-3">
         {% endif %}
           {% if 'rint' in comp.type.type %}
+          <a class="btn btn-outline-primary mb-1" href="{% url 'competition_add_images' comp.id %}" >Add Images - {{ comp.type }}</a><br/>
           {% else %}
-          <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'slideshow' comp.id %}" >{{ comp.type }} Preview</a><br/>
+          <a class="btn btn-outline-primary mb-1" href="{% url 'slideshow' comp.id %}" >{{ comp.type }} Preview</a><br/>
+          <a class="btn btn-outline-primary" href="{% url 'judge_slideshow' comp.id %}" >{{ comp.type }} Judge's Comments</a><br/>
           {% endif %}
-          <a class="badge rounded-pill bg-primary text-light fs-5" href="{% url 'judge_slideshow' comp.id %}" >{{ comp.type }} Judge's Comments</a><br/>
+          <a class="badge rounded-pill bg-primary text-light"
+             href="{% url 'edit_judge_awards' comp.id %}">Edit Judge Awards - {{ comp.type }}</a>
+          <a class="badge rounded-pill bg-primary text-light"
+             href="{% url 'edit_member_awards' comp.id %}">Edit Member Awards - {{ comp.type }}</a>
+        </div>
         {% endfor %}
         </div>
       </div>
     </div>
-  <br/>
+  </div>
 {% endblock %}

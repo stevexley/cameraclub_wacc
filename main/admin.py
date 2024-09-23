@@ -32,7 +32,10 @@ class JudgeAdmin(admin.ModelAdmin):
     
     @admin.display(description='Email Address')
     def get_email(self, obj):
-        return obj.person.user.email
+        try:
+            return obj.person.user.email
+        except:
+            return
      
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):

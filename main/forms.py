@@ -35,6 +35,7 @@ class ImageForm(forms.ModelForm):
             visible.field.widget.attrs['placeholder'] = visible.field.label
             visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
         self.fields['print'].widget.attrs['class'] = 'form-check-input form-check-inline'
+        self.fields['print'].widget.attrs['disabled'] = True
         self.fields['photo'].widget.attrs['class'] = 'form-control form-control-lg'
         self.fields['photo'].widget.attrs['id'] = 'fileInput'
         self.fields['author'].empty_label = '-Select Author-'
@@ -46,6 +47,7 @@ class ImageForm(forms.ModelForm):
             self.fields['author'].widget = forms.HiddenInput()
         else:
             self.fields['author'].queryset = Person.objects.filter(member__current=True)
+            self.fields['photo'].widget = forms.HiddenInput()
         
     def clean_title(self):
         title = self.cleaned_data.get('title')
