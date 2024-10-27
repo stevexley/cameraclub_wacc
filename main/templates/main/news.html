@@ -7,7 +7,7 @@
     <div class="row justify-content-between mb-3">
         <div class="col-2">
             {% if previous_year %}
-            <a class="btn btn-primary" href="{% url 'news' year=previous_year %}">{{ previous_year }}</a>
+            <a class="btn btn-outline-primary" href="{% url 'news' year=previous_year %}">{{ previous_year }}</a>
             {% endif %}
         </div>
             <div class="col text-center">
@@ -15,7 +15,7 @@
             </div>
         <div class="col-2">
             {% if next_year %}
-                <a class="btn btn-primary float-end" href="{% url 'news' year=next_year %}">{{ next_year }}</a>
+                <a class="btn btn-outline-primary float-end" href="{% url 'news' year=next_year %}">{{ next_year }}</a>
             {% endif %}
         </div>
     </div>

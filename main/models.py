@@ -97,7 +97,7 @@ class Position(models.Model):
     '''Positions on the Committee, used to create Contacts list'''
     id = models.AutoField(primary_key=True)
     position = models.CharField(max_length=50)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='position')
     order = models.SmallIntegerField()
     
     def __str__(self):
@@ -109,7 +109,7 @@ class Position(models.Model):
 class Judge(models.Model):
     '''The Judge model that contains present and past judges.'''
     id = models.AutoField(primary_key=True)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='judge')
     current = models.BooleanField(default=True)
     notes = models.TextField(null=True, blank=True)
     

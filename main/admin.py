@@ -58,6 +58,7 @@ class SubjectAdmin(admin.ModelAdmin):
 
 @admin.register(Competition)
 class CompAdmin(admin.ModelAdmin):
+    raw_id_fields = ['images']
     date_hierarchy = 'judging_closes'
     search_fields = [ 'subject__subject' ]
     list_display = [ "__str__", "judging_closes" ]

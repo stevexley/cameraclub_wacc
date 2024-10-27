@@ -1,0 +1,11 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+    <div class="container-fluid px-0">
+        <div>
+            {{ blurb|safe }}
+        <div>
+        <a class="btn btn-primary" href="{% url 'event' event.id %}" >Back</a>
+    </div>
+{% endblock %}
+

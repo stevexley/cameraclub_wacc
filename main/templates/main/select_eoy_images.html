@@ -1,0 +1,86 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<h1>{{ competition }}</h1>
+
+{% if 'Mono' in competition.type.type %}
+    <p>Below is a list of all your entries into Open Mono Digital and Set Subject Digital competitions this year</p>
+    <p>Select up to 3 monochrome images for entry (tick box on the left) and click "Submit Entries"</p>
+{% else %}
+    <p>Below is a list of all your entries into Open Colour Digital and Set Subject Digital competitions this year</p>
+    <p>Select up to 3 colour images for entry (tick box on the left) and click "Submit Entries"</p>
+{% endif %}
+
+<!-- Form Starts -->
+<form method="post">
+    {% csrf_token %}
+
+    <!-- Display general form (non-field) errors here -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Start of the table -->
+    <table class="table w-auto">
+        {% for image in user_images %}
+            <tr>
+                <td>
+                    <!-- The actual checkbox -->
+                    <input style="width: 25px; height: 25px;" type="checkbox" name="images" value="{{ image.id }}" id="image_{{ image.id }}">
+                </td>
+                <td>
+                    <!-- Check if the image has a photo -->
+                    {% if image.photo %}
+                        <!-- Render the image if it exists -->
+                        <label for="image_{{ image.id }}">
+                            <img class="picframe" src="{{ image.photo.url }}" alt="Image {{ image.title }}">
+                        </label>
+                    {% else %}
+                        <!-- Render a placeholder if no photo exists -->
+                        <label for="image_{{ image.id }}">
+                            <p>No image available</p>
+                        </label>
+                    {% endif %}
+                </td>
+                <td>
+                    <h5>{{ image.title }}</h5>
+                    {% for award in image.award_set.all %}
+                    <div>{{ award.type.name }} {{ award.type.awarded_by.awarded_by }}
+                    {% if forloop.last %}
+                        {% if 'Open' in award.competition.type.type %}
+                            in {{ award.competition.type }}</div>
+                        {% else %}
+                            in {{ award.competition.type }} - {{ award.competition.subject }}</div>
+                        {% endif %}
+                    {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endfor %}
+        
+        <!-- Field-specific errors for the "images" field -->
+        {% if form.images.errors %}
+            <tr>
+                <td colspan="3">
+                    <div class="alert alert-danger">
+                        {% for error in form.images.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </td>
+            </tr>
+        {% endif %}
+
+        <tr>
+            <td colspan="3">
+                <button class="btn btn-block btn-outline-primary" type="submit">Submit Entries</button>
+            </td>
+        </tr>
+    </table>
+</form>
+
+{% endblock content %}

@@ -1,41 +1,12 @@
 {% extends "main/base.html" %}
 {% block content %}
 <div class="container">
-    <h1>Voting for {{ competition.subject.subject }}</h1>
+    <h1>Entries for {{ competition.subject.subject }}</h1>
     <ul class="image-gallery">
         {% for image in images %}
             {% include "main/includes/gallery_items_blind.html" %}
         {% endfor %}
     </ul>
-    <div class="row">
-        <div clas="col my-2">
-            <form method="post">
-                {% csrf_token %}
-                {% for vote_option in vote_options %}
-                    <div class="form-group">
-                        <label for="{{ vote_option.id }}">{{ vote_option.option }}:</label>
-                        <ul class="list-unstyled">
-                            {% for image in images %}
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input"
-                                            type="radio"
-                                            id="vote_{{ image.id }}_{{ vote_option.id }}"
-                                            name="{{ vote_option.id }}"
-                                            value="{{ image.id }}">
-                                    <label class="form-check-label mr-2"
-                                            id="vote_label_{{ image.id }}_{{ vote_option.id }}"
-                                            for="vote_{{ image.id }}_{{ vote_option.id }}">
-                                        {{ forloop.counter }} 
-                                    </label>
-                                </div>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endfor %}
-                <button type="submit" class="btn btn-outline-primary">Submit Votes</button>
-            </form>
-        </div>
-    </div>
     <a class="btn btn-primary" href="{% url 'event' competition.event.id %}" >Back</a>
 </div>
 {% endblock content %}

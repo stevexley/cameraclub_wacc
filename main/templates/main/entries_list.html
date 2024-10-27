@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% block title %}
+      <title>WACC</title>
+    {% endblock title %}
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% load static %}
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <script src="{% static 'admin/js/core.js' %}"></script>
+  </head>
+  <body>
+    <div class="container-fluid px-0">
+        <div class="col">
+            <h1>{{ competition }}</h1>
+            <div class="row">
+                <table class="table">
+                    <tr>
+                        <th>Number</th>
+                        <th>Title</th>
+                        <th>Award</th>
+                        <th class="w-75">Comments/Notes</th>
+                    </tr>
+                    {% for image in images %}
+                    <tr>
+                        <td>{{ forloop.counter }} </td>
+                        <td>{{ image.title }}</td>
+                        <td>        </td>
+                        <td></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                <a class="btn btn-primary" href="{% url 'event' competition.event.id %}" >Back</a>
+            </div>
+        </div>
+    </div>
+  </body>
+</html>

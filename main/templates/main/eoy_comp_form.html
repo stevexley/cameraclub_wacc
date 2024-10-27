@@ -1,0 +1,53 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+  <h2>Enter End of Year Competitions</h2>
+  <p>Below is a list of all your digital entries for this year</p>
+  <p>You can enter 4 images in each of the mono and colour competitions</p>
+  <p>Select the competition (mono or colour) for each entry and click Submit Entries.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ formset.management_form }}
+    <table class="table">
+      <tbody>
+        {% for form, image in zipped_data %}
+        
+          <tr>
+            <td><img class="picframe" loading="lazy" src="{{ image.photo.url }}" alt="{{ image.title }}"></td>
+            <td>
+                <h4>{{ image.title }}</h4>
+                {% for award in image.award_set.all %}
+                    <div>{{ award.type.name }} {{ award.type.awarded_by.awarded_by }}
+                    {% if forloop.last %}
+                    {% if 'Open' in award.competition.type.type %}
+                        in {{ award.competition.type }}</div>
+                    {% else %}
+                        in {{ award.competition.type }} - {{ award.competition.subject }}</div>
+                    {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </td>
+            <td>
+              {{ form.image_id }}  <!-- Hidden field for image_id -->
+              {{ form.competition }}  <!-- Competition dropdown -->
+              <!-- Display form-specific errors -->
+                {% if form.non_field_errors %}
+                <div class="error">
+                    {{ form.non_field_errors }}
+                </div>
+              {% endif %}
+              {% if form.competition.errors %}
+                <div class="error">
+                    {% for error in form.competition.errors %}
+                        Error: {{ error }}
+                    {% endfor %}
+                </div>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button class="btn btn-block btn-outline-primary" type="submit">Submit Entries</button>
+  </form>
+{% endblock %}

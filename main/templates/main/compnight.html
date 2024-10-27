@@ -18,8 +18,9 @@
              href="{% url 'edit_judge_awards' comp.id %}">Edit Judge Awards - {{ comp.type }}</a>
           <a class="badge rounded-pill bg-primary text-light"
              href="{% url 'edit_member_awards' comp.id %}">Edit Member Awards - {{ comp.type }}</a>
-        </div>
+          </div>
         {% endfor %}
+        <a class="btn btn-outline-primary" href="{% url 'all_slideshow' competitions.first.event.id %}" >Image Slideshow</a><br/>
         </div>
       </div>
     </div>

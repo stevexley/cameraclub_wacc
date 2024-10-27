@@ -222,3 +222,36 @@ class CompetitionJudgeForm(forms.ModelForm):
     class Meta:
         model = Competition
         fields = [ 'judge', ]
+
+class EndOfYearEntryForm(forms.Form):
+    image_id = forms.IntegerField(widget=forms.HiddenInput())
+    competition = forms.ModelChoiceField(
+        queryset = Competition.objects.filter(
+            type__type__contains='End of Year',  
+            type__active=True
+        ),
+        required=False,
+        label='Select End of Year Competition'                                        
+    )
+
+class ImageSelectionForm(forms.Form):
+    images = forms.ModelMultipleChoiceField(
+        queryset=Image.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=True
+    )
+ 
+    def __init__(self, user_images, competition=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['images'].queryset = user_images
+        self.fields['images'].help_text = "Select up to 3 images"
+        self.competition = competition
+   
+    def clean_images(self):
+        images = self.cleaned_data.get('images')
+        entries = Image.objects.filter(competitions = self.competition)
+        if len(entries) == 3:
+            raise forms.ValidationError("You already entered 3 images.")
+        if len(images) + len(entries) > 3:
+            raise forms.ValidationError("You can enter up to 3 images only. You selected " + str(len(images)) + " and have already entered " + str(len(entries)) )
+        return images

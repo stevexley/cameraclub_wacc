@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% block title %}
+      <title>WACC</title>
+    {% endblock title %}
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+  </head>
+  <body id="black-bg">
+    <div class="container-fluid px-0" >
+        <div id="carouselCompImages" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                {% for competition in event.competition_set.all %}
+                    {% if "igital" in competition.type.type %}
+                        {% for image in competition.images.all %}
+                            <div class="carousel-item {% if forloop.parentloop.first and forloop.first %}active{% endif %}">
+                                <div class="d-flex align-items-center justify-content-center min-vh-100">
+                                    {% if image.photo %}
+                                        <img src="{{ image.photo.url }}" alt="{{ image.title }}">
+                                    {% else %}
+                                        <img src="{{ image.photo }}" alt="{{ image.title }}">
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <button id="wacc-hidden-text" class="carousel-control-prev" type="button" data-bs-target="#carouselCompImages" data-bs-slide="prev">
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button id="wacc-hidden-text" class="carousel-control-next" type="button" data-bs-target="#carouselCompImages" data-bs-slide="next">
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </div>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+  </body>
+  <style>
+    /* Override Bootstrap carousel transition */
+    .carousel-item {
+        transition: none !important;
+    }
+  </style>
+  <script>
+    // Initialize Bootstrap 5 carousel
+    document.addEventListener('DOMContentLoaded', function () {
+        new bootstrap.Carousel(document.getElementById('carouselCompImages'), {
+        interval: 4000, // Set the interval for auto-sliding in milliseconds (e.g., 5000 for 5 seconds)
+        wrap: true, // Set wrap option to false to prevent looping back to the beginning
+        pause: false, // Disable pause on hover
+    });
+  </script>
+</html>
+
