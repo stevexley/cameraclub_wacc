@@ -523,31 +523,6 @@ def count_up_votes(request, competition_id):
     url = reverse('competition_awards', kwargs={'pk': competition_id})
     return redirect(url)
 
- 
-
-# class JudgeJudgingView(LoginRequiredMixin, DetailView):
-#     '''Slideshow and list of images in competition'''
-#     login_url = "accounts/login/"
-#     redirect_field_name = "redirect_to"
-#     model = Competition
-#     template_name = 'main/judge_viewing.html'
-
-#     def dispatch(self, request, *args, **kwargs):
-#         # Additional check to ensure that the judge is viewing their assigned competition
-#         # also viewable by committee position holders (for debugging)
-#         self.object = self.get_object()
-#         position = Position.objects.filter(person = self.request.user.person)
-#         if not position:
-#             judge = Person.objects.get(user=self.request.user)
-#             if judge != self.object.judge.person:
-#                 raise Http404("Judge " + str(judge) + " Object " + str(self.object.judge) )
-#         return super().dispatch(request, *args, **kwargs)
-    
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context['blurb'] = Blurb.objects.get(name = 'Judging').contents
-#         return context
-    
 class JudgeNotesView(LoginRequiredMixin, TemplateView):
     '''Slideshow and list of images in competition'''
     login_url = "accounts/login/"
@@ -1012,7 +987,7 @@ def eoy_competition(request):
                 if image not in selected_images:
                     end_of_year_competition.images.add(image)
             messages.success(request, 'Your images have been successfully updated for the EoY competition')
-            return redirect('main-gallery')
+            return redirect('event', end_of_year_competition.event.id)
     else:
         form = ImageSelectionForm(user_images, initial={'images': selected_images})
 
@@ -1024,3 +999,75 @@ def eoy_competition(request):
         'selected_image_ids': list(selected_image_ids)
     })
 
+@login_required
+@user_passes_test(user_has_permission)
+def eoy_competition_prints(request):
+    current_year = timezone.now().year
+    if "mono" in request.path:
+        user_images = Image.objects.filter(
+            competitions__event__starts__year=current_year,
+            competitions__type__type__in=['Open Mono Prints', 'Set Prints']
+        ).distinct()
+        end_of_year_competition = Competition.objects.get(event__starts__year=current_year,
+                                                          type__type="End of Year - Mono Prints")
+    else:
+        user_images = Image.objects.filter(
+            competitions__event__starts__year=current_year,
+            competitions__type__type__in=['Open Colour Prints', 'Set Prints']
+        ).distinct()
+        end_of_year_competition = Competition.objects.get(event__starts__year=current_year,
+                                                          type__type="End of Year - Colour Prints")
+
+    # Get the images already selected for the competition
+    selected_images = end_of_year_competition.images.all()
+    selected_image_ids = selected_images.values_list('id', flat=True)
+
+    if request.method == 'POST':
+        form = ImageSelectionForm(user_images=user_images, user=request.user, competition=end_of_year_competition, data=request.POST)
+        if form.is_valid():
+            new_selected_images = form.cleaned_data['images']
+            # Remove deselected
+            for image in selected_images:
+                if image not in new_selected_images:
+                    end_of_year_competition.images.remove(image)
+            
+            # Add newly selected images
+            for image in new_selected_images:
+                if image not in selected_images:
+                    end_of_year_competition.images.add(image)
+            messages.success(request, 'The images have been successfully updated for the EoY competition')
+            return redirect('event', end_of_year_competition.event.id)
+    else:
+        form = ImageSelectionForm(user_images, initial={'images': selected_images})
+
+    return render(request, 'main/select_eoy_prints.html', {
+        'form': form,
+        'competition': end_of_year_competition,
+        'user_images': user_images,
+        'selected_images': selected_images,  # Pass selected_images to the template
+        'selected_image_ids': list(selected_image_ids)
+    })
+
+@login_required
+@user_passes_test(user_has_permission)
+def eoy_competition_labels(request):
+    current_year = timezone.now().year
+    if "mono" in request.path:
+        end_of_year_competition = Competition.objects.get(event__starts__year=current_year,
+                                                          type__type="End of Year - Mono Prints")
+        images = Image.objects.filter(
+            competitions=end_of_year_competition,
+            ).distinct()
+        
+    else:
+        end_of_year_competition = Competition.objects.get(event__starts__year=current_year,
+                                                          type__type="End of Year - Colour Prints")
+        images = Image.objects.filter(
+            competitions=end_of_year_competition,
+            ).distinct()
+       
+        
+    return render(request, 'main/eoy_labels.html', {
+        'competition': end_of_year_competition,
+        'images': images,
+    })

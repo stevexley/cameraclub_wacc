@@ -49,6 +49,10 @@ urlpatterns = [
 #    path('end-of-year-entry/', EndOfYearEntryView.as_view(), name='end_of_year_entry'),
     path('end-of-year-entry/mono', eoy_competition, name='end_of_year_entry_mono'),
     path('end-of-year-entry/colour', eoy_competition, name='end_of_year_entry_colour'),
+    path('end-of-year-entry/mono_prints', eoy_competition_prints, name='end_of_year_entry_mono_prints'),
+    path('end-of-year-entry/colour_prints', eoy_competition_prints, name='end_of_year_entry_colour_prints'),
+    path('end-of-year-entry/mono_labels', eoy_competition_labels, name='end_of_year_entry_mono_labels'),
+    path('end-of-year-entry/colour_labels', eoy_competition_labels, name='end_of_year_entry_colour_labels'),
     
 #    path('image', views.image, name='image')
 ]

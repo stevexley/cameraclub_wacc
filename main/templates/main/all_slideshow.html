@@ -18,7 +18,7 @@
                 {% for competition in event.competition_set.all %}
                     {% if "igital" in competition.type.type %}
                         {% for image in competition.images.all %}
-                            <div class="carousel-item {% if forloop.parentloop.first and forloop.first %}active{% endif %}">
+                            <div class="carousel-item {% if forloop.parentloop.last %}{% if forloop.first %}active{% endif %}{% endif %}">
                                 <div class="d-flex align-items-center justify-content-center min-vh-100">
                                     {% if image.photo %}
                                         <img src="{{ image.photo.url }}" alt="{{ image.title }}">
@@ -55,6 +55,7 @@
         wrap: true, // Set wrap option to false to prevent looping back to the beginning
         pause: false, // Disable pause on hover
     });
+    })
   </script>
 </html>
 

@@ -23,11 +23,21 @@
                                         <h4>{{ competition.type }}</h4>
                                         {% if 'End of Year' in competition.type.type %}
                                             {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" >= todays_date and user.person.member.current and "Mono Digital" in competition.type.type %}
-                                                <a class="btn btn-outline-primary ml-auto"
+                                                <a class="btn btn-outline-primary float-right mr-1"
                                                     href="{% url 'end_of_year_entry_mono' %}">Select Entries</a>
                                             {% elif competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" >= todays_date and user.person.member.current and "Colour Digital" in competition.type.type %}
-                                                <a class="btn btn-outline-primary ml-auto"
+                                                <a class="btn btn-outline-primary float-right mr-1"
                                                     href="{% url 'end_of_year_entry_colour' %}">Select Entries</a>
+                                            {% elif "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position and "Mono Prints" in competition.type.type %}
+                                            <div class="w-25">
+                                                <a class="btn btn-primary float-right mr-1"
+                                                    href="{% url 'end_of_year_entry_mono_prints' %}">Select Entries</a>
+                                                <a class="btn btn-primary float-right mr-1"
+                                                    href="{% url 'end_of_year_entry_mono_labels' %}">Labels</a>
+                                            </div>
+                                            {% elif "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position and "Colour Prints" in competition.type.type %}
+                                                <a class="btn btn-primary ml-auto"
+                                                    href="{% url 'end_of_year_entry_colour_labels' %}">Labels</a>
                                             {% endif %}
                                         {% elif competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" >= todays_date and user.person.member.current and "igital" in competition.type.type %}
                                             <a class="btn btn-outline-primary ml-auto"

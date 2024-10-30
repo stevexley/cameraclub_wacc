@@ -175,6 +175,22 @@
     object-fit: none;
 } */
 
+.eoy-label {
+    margin-left:auto; 
+    margin-right:auto; 
+}
+
+.eoy-label tr {
+    width: 100%;
+}
+.eoy-label td {
+    font-size: 30pt;
+    padding-top: 10pt;
+    padding-bottom: 10pt;
+    text-align: center;
+    width: 100%;
+}
+
 .event-list {
     list-style: none;
     margin: 0px;

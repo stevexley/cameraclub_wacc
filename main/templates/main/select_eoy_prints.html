@@ -1,0 +1,67 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<h1>{{ competition }}</h1>
+
+{% if 'Mono' in competition.type.type %}
+    <p>Below is a list of all the entries into Open Mono Prints and Set Subject Prints competitions this year</p>
+    <p>Select all the images entered (tick box on the left) and click "Submit Entries"</p>
+    <p>There will be colour images in the list from Set Subjent entries, sorry about that<p>
+{% else %}
+    <p>Below is a list of all your entries into Open Colour Digital and Set Subject Digital competitions this year</p>
+    <p>SSelect all the images entered (tick box on the left) and click "Submit Entries"</p>
+    <p>There will be mono images in the list from Set Subjent entries, sorry about that<p><p>
+{% endif %}
+
+<!-- Form Starts -->
+<form method="post">
+    {% csrf_token %}
+
+    <!-- Display general form (non-field) errors here -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Start of the table -->
+    <table class="table w-auto">
+        {% for image in user_images %}
+            <tr>
+                <td>
+                    <!-- The actual checkbox -->
+                    <input style="width: 25px; height: 25px;" type="checkbox" class="form-check-input" id="image_{{ image.id }}" name="{{ form.images.name }}" value="{{ image.id }}" {% if image.id in selected_image_ids %}checked{% endif %}>
+                </td>
+                <td>
+                    <h5>{{ image.title }}</h5>
+                </td>
+                <td>
+                    <h5>{{image.author}}</td>
+                </td>
+            </tr>
+        {% endfor %}
+        
+        <!-- Field-specific errors for the "images" field -->
+        {% if form.images.errors %}
+            <tr>
+                <td colspan="3">
+                    <div class="alert alert-danger">
+                        {% for error in form.images.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </td>
+            </tr>
+        {% endif %}
+
+        <tr>
+            <td colspan="3">
+                <button class="btn btn-block btn-outline-primary" type="submit">Update Entries</button>
+            </td>
+        </tr>
+    </table>
+</form>
+
+{% endblock content %}
