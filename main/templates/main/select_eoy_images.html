@@ -6,9 +6,11 @@
 {% if 'Mono' in competition.type.type %}
     <p>Below is a list of all your entries into Open Mono Digital and Set Subject Digital competitions this year</p>
     <p>Select up to 3 monochrome images for entry (tick box on the left) and click "Submit Entries"</p>
+    <p>There may be colour images in the list from Set Subjent entries, <strong>do not select colour images for this competition</strong><p>
 {% else %}
     <p>Below is a list of all your entries into Open Colour Digital and Set Subject Digital competitions this year</p>
     <p>Select up to 3 colour images for entry (tick box on the left) and click "Submit Entries"</p>
+    <p>There may be mono images in the list from Set Subjent entries, <strong>do not select mono images for this competition</strong><p>
 {% endif %}
 
 <!-- Form Starts -->
@@ -30,7 +32,8 @@
             <tr>
                 <td>
                     <!-- The actual checkbox -->
-                    <input style="width: 25px; height: 25px;" type="checkbox" name="images" value="{{ image.id }}" id="image_{{ image.id }}">
+                    <input style="width: 25px; height: 25px;" type="checkbox" class="form-check-input" id="image_{{ image.id }}" name="{{ form.images.name }}" value="{{ image.id }}" {% if image.id in selected_image_ids %}checked{% endif %}>
+          
                 </td>
                 <td>
                     <!-- Check if the image has a photo -->

@@ -238,20 +238,17 @@ class ImageSelectionForm(forms.Form):
     images = forms.ModelMultipleChoiceField(
         queryset=Image.objects.none(),
         widget=forms.CheckboxSelectMultiple,
-        required=True
+        required=False
     )
  
-    def __init__(self, user_images, competition=None, *args, **kwargs):
+    def __init__(self, user=None, user_images=None, competition=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['images'].queryset = user_images
-        self.fields['images'].help_text = "Select up to 3 images"
         self.competition = competition
+        self.user = user
    
     def clean_images(self):
         images = self.cleaned_data.get('images')
-        entries = Image.objects.filter(competitions = self.competition)
-        if len(entries) == 3:
-            raise forms.ValidationError("You already entered 3 images.")
-        if len(images) + len(entries) > 3:
-            raise forms.ValidationError("You can enter up to 3 images only. You selected " + str(len(images)) + " and have already entered " + str(len(entries)) )
+        if len(images) > 3:
+            raise forms.ValidationError("You can only enter up to 3 images")
         return images

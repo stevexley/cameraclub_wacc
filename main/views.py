@@ -984,7 +984,7 @@ def eoy_competition(request):
             competitions__type__type__in=['Open Mono Digital', 'Set Digital']
         ).distinct()
         end_of_year_competition = Competition.objects.get(event__starts__year=current_year,
-                                                                type__type="End of Year - Mono Digital")
+                                                          type__type="End of Year - Mono Digital")
     else:
         user_images = Image.objects.filter(
             author=request.user.person,
@@ -992,23 +992,35 @@ def eoy_competition(request):
             competitions__type__type__in=['Open Colour Digital', 'Set Digital']
         ).distinct()
         end_of_year_competition = Competition.objects.get(event__starts__year=current_year,
-                                                                type__type="End of Year - Colour Digital")
+                                                          type__type="End of Year - Colour Digital")
+
+    # Get the images already selected for the competition
+    selected_images = end_of_year_competition.images.filter(author=request.user.person)
+    selected_image_ids = selected_images.values_list('id', flat=True)
 
     if request.method == 'POST':
-        form = ImageSelectionForm(user_images, competition=end_of_year_competition, data=request.POST)
+        form = ImageSelectionForm(user_images=user_images, user=request.user, competition=end_of_year_competition, data=request.POST)
         if form.is_valid():
-            selected_images = form.cleaned_data['images']
-            # Handle the selected images (e.g., save them to the competition)
-            # For example, add them to the end-of-year competition
-
-            end_of_year_competition.images.add(*selected_images)
-            messages.success(request, 'Your images have been successfully submitted to the EoY competition')
+            new_selected_images = form.cleaned_data['images']
+            # Remove deselected
+            for image in selected_images:
+                if image not in new_selected_images:
+                    end_of_year_competition.images.remove(image)
+            
+            # Add newly selected images
+            for image in new_selected_images:
+                if image not in selected_images:
+                    end_of_year_competition.images.add(image)
+            messages.success(request, 'Your images have been successfully updated for the EoY competition')
             return redirect('main-gallery')
     else:
-        form = ImageSelectionForm(user_images, request.POST)
+        form = ImageSelectionForm(user_images, initial={'images': selected_images})
 
     return render(request, 'main/select_eoy_images.html', {
         'form': form,
         'competition': end_of_year_competition,
-        'user_images': user_images  # Pass user_images to the template
+        'user_images': user_images,
+        'selected_images': selected_images,  # Pass selected_images to the template
+        'selected_image_ids': list(selected_image_ids)
     })
+
