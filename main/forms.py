@@ -252,3 +252,16 @@ class ImageSelectionForm(forms.Form):
         if len(images) > 3:
             raise forms.ValidationError("You can only enter up to 3 images")
         return images
+    
+class EoyPrintSelectionForm(forms.Form):
+    images = forms.ModelMultipleChoiceField(
+        queryset=Image.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+ 
+    def __init__(self, user=None, user_images=None, competition=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['images'].queryset = user_images
+        self.competition = competition
+        self.user = user

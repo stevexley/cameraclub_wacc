@@ -1023,7 +1023,7 @@ def eoy_competition_prints(request):
     selected_image_ids = selected_images.values_list('id', flat=True)
 
     if request.method == 'POST':
-        form = ImageSelectionForm(user_images=user_images, user=request.user, competition=end_of_year_competition, data=request.POST)
+        form = EoyPrintSelectionForm(user_images=user_images, user=request.user, competition=end_of_year_competition, data=request.POST)
         if form.is_valid():
             new_selected_images = form.cleaned_data['images']
             # Remove deselected
