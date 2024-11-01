@@ -72,7 +72,7 @@
             <div class="d-flex">
               {% if user.is_authenticated %}
               {% if user.person.member %}
-                <a class="btn btn--outline-primary mx-2 text-nowrap"
+                <a class="btn btn-outline-primary mx-2 text-nowrap"
                   href="{% url 'profile' user.person.member.id %}">Hi {{ user.person.firstname }}</a>
               {% endif %}
                 <a class="btn btn-secondary"

@@ -44,7 +44,7 @@ class ProfileView(LoginRequiredMixin, DetailView):
                 'year': year,
                 'images': Image.objects.filter(author = person,
                                                 competitions__judging_closes__year = year
-                                                ).order_by('competitions__judging_closes')
+                                                ).order_by('competitions__judging_closes').distinct()
             }
             images[year] = entries
             context['images'] = images
