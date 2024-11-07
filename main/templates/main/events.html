@@ -49,17 +49,20 @@
                                         {% for competition in event.competition_set.all %}
                                             {% if competition.open_for_entries|date:"Y-m-d H:i" < right_now and competition.entries_close|date:"Y-m-d H:i" > right_now and user.person.member.current %}
                                                 {% if 'End of Year - Mono Digital' in competition.type.type %}
-                                                <a class="badge rounded-pill bg-primary text-light fs-5"
-                                                href="{% url 'end_of_year_entry_mono' %}">{{ competition.type }}</a>
+                                                    <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                    href="{% url 'end_of_year_entry_mono' %}">{{ competition.type }}</a>
                                                 {% elif 'End of Year - Colour Digital' in competition.type.type %}
-                                                <a class="badge rounded-pill bg-primary text-light fs-5"
-                                                href="{% url 'end_of_year_entry_colour' %}">{{ competition.type }}</a>
+                                                    <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                    href="{% url 'end_of_year_entry_colour' %}">{{ competition.type }}</a>
                                                 {% elif 'Open' and 'Digital' in competition.type.type %}
                                                     <a class="badge rounded-pill bg-primary text-light fs-5"
                                                        href="{% url 'enter_competition' competition.id %}">{{ competition.type }}</a>
                                                 {% elif 'Digital' in competition.type.type %}
                                                     <a class="badge rounded-pill bg-primary text-light fs-5"
                                                        href="{% url 'enter_competition' competition.id %}">{{ competition.type }} - {{ competition.subject }}</a>
+                                                {% elif 'Bickford' in competition.type.type %}
+                                                       <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                          href="{% url 'enter_competition' competition.id %}">{{ competition.subject }}</a>
                                                 {% else %}
                                                     {% if 'Open' in competition.type.type %}
                                                         <span class="badge rounded-pill bg-primary text-light fs-5">{{ competition.type }}</span>
@@ -79,6 +82,9 @@
                                                 {% if 'Open' in competition.type.type %}
                                                     <a class="badge rounded-pill bg-primary text-light fs-5"
                                                        href="{% url 'competition_awards' competition.id %}">{{ competition.type }}</a>
+                                                {% elif 'Bickford' in competition.type.type %}
+                                                    <a class="badge rounded-pill bg-primary text-light fs-5"
+                                                       href="{% url 'competition_awards' competition.id %}">{{ competition.subject }}</a>
                                                 {% else %}
                                                     <a class="badge rounded-pill bg-primary text-light fs-5"
                                                        href="{% url 'competition_awards' competition.id %}">{{ competition.type }} - {{ competition.subject }}</a>
