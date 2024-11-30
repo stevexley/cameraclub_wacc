@@ -906,47 +906,63 @@ class AnnualTotalsView(PermissionRequiredMixin, ListView):
         
         # Iterate over members
         for member in members:
-            # Initialize a dictionary to store points for each award type
-          
             member_points = {}
-            combined_award_totals = {display_name: 0 for keyword, display_name in keyword_display_names.items()}
-            
-            # Iterate over award types
-            for comp_type in comp_types:
-                # Calculate points from awards for the current member and comp type
-                # Points from all awards in each comp type this year
-                award_points = Award.objects.filter(image__author=member, 
-                                                    competition__type=comp_type,
-                                                    competition__event__starts__year=year
-                                                    ).aggregate(total_points=Sum('type__points'))['total_points'] or 0
-                # One point for every entry in a comp for the current member and comp type this year
-                entry_points = Image.objects.filter(author=member, 
-                                                    competitions__type=comp_type,
-                                                    competitions__event__starts__year=year).count()
+            combined_award_totals = {display_name: 0 for display_name in keyword_display_names.values()}
+
+            for comp_type in comp_types:    
+                award_points = Award.objects.filter(
+                    image__author=member,
+                    competition__type=comp_type,
+                    competition__type__contributes_to_annual=True,
+                    competition__event__starts__year=year
+                ).aggregate(total_points=Sum('type__points'))['total_points'] or 0
+                if member.id == 136:
+                    print('Susi award points: ' + comp_type.type + ' ' + str(award_points) )
+        
+                entry_points = Image.objects.filter(
+                    author=member,
+                    competitions__type=comp_type,
+                    competitions__type__contributes_to_annual=True,
+                    competitions__event__starts__year=year
+                ).count()
+                if member.id == 136:
+                    print('Susi image points: ' + comp_type.type + ' ' + str(entry_points) )
+        
                 member_points[comp_type.type] = award_points + entry_points
-                
+        
             for keyword, display_name in keyword_display_names.items():
-                # Calculate points for the current member combining competition types for EOY trophies
-                combined_award_points = Award.objects.filter(image__author=member, 
-                                                    competition__type__type__icontains=keyword,
-                                                    competition__event__starts__year=year
-                                                    ).aggregate(total_points=Sum('type__points'))['total_points'] or 0
-                combined_entry_points = Image.objects.filter(author=member, 
-                                                    competitions__type__type__icontains=keyword,
-                                                    competitions__event__starts__year=year).count()
-                combined_award_totals[display_name] += combined_award_points + combined_entry_points
-            
-            grand_total = sum(member_points.values())          
-            
-            # Create array of points per member
-            points_totals[member] = {'points': member_points, 'combined_awards': combined_award_totals, 'grand_total': grand_total}
-            
-            # Add member and their points totals to the dictionary, add to context if any points
+                combined_award_points = Award.objects.filter(
+                    image__author=member,
+                    competition__type__type__icontains=keyword,
+                    competition__type__contributes_to_annual=True,
+                    competition__event__starts__year=year
+                ).aggregate(total_points=Sum('type__points'))['total_points'] or 0
+                if member.id == 136:
+                    print('Susi combined awards points: ' + keyword + ' ' + str(combined_award_points) )
+        
+                combined_entry_points = Image.objects.filter(
+                    author=member,
+                    competitions__type__type__icontains=keyword,
+                    competitions__type__contributes_to_annual=True,
+                    competitions__event__starts__year=year
+                ).count()
+                if member.id == 136:
+                    print('Susi combined entry points: ' + keyword + ' ' + str(combined_entry_points) )
+        
+                combined_award_totals[display_name] = combined_award_points + combined_entry_points
+        
+            grand_total = sum(member_points.values())
+        
+            points_totals[member] = {
+                'points': member_points,
+                'combined_awards': combined_award_totals,
+                'grand_total': grand_total
+            }
+        
             if grand_total > 0:
-                context['points_totals'] =  points_totals
-
+                context['points_totals'] = points_totals
+ 
         # Now points_totals dictionary contains points totals for each member 
-
         return context
 
 @login_required
