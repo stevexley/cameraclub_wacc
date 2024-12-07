@@ -75,7 +75,7 @@
                                             </div>
                                             {% endif %}
                                         {% endif %}
-                                        {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type and user.person.member.current %}
+                                        {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type and user.person.member.current and competition.members_vote %}
                                             <div class="w-25">
                                                 <a class="btn btn-outline-primary float-right"
                                                 href="{% url 'competition_vote' competition.id %}">Vote</a>
@@ -114,7 +114,7 @@
                                             </div>
                                             {% endif %}
                                         {% endif %}
-                                        {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type and user.person.member.current %}
+                                        {% if competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type and user.person.member.current and competition.members_vote %}
                                             <div class="w-25">
                                                 <a class="btn btn-primary float-right"
                                                    href="{% url 'competition_vote' competition.id %}">Vote</a>
