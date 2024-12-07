@@ -3,15 +3,18 @@ import re
 import nltk
 import cv2
 import os
+from zipfile import ZipFile
 import numpy as np
 from PIL import Image
 from nltk.corpus import stopwords
 from itertools import chain
 from datetime import datetime, timedelta
-from .models import Event, CompetitionType, Award, Image, Rule
+from .models import Event, Competition, CompetitionType, Award, Image, Rule
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.contrib import messages
+from django.utils.encoding import force_str
+from django.utils.text import slugify
 from django.conf import settings
 
 def setTitleCase(title):
@@ -290,3 +293,22 @@ def cleanup_photos(request):
     for img in images:
         img.photo = None
         img.save()
+
+def zip_comp_images(request, comp_pk):
+    comp = Competition.objects.get(id=comp_pk)
+    images = Image.objects.filter(competitions=comp, photo__isnull=False).distinct()
+
+    zip_buffer = io.BytesIO()
+    zipname = f"WACC_download_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+
+    with ZipFile(zip_buffer, 'w') as myzip:
+        for image in images:
+            imagefile = os.path.join(settings.MEDIA_ROOT, str(image.photo))
+            # Slugify for safe filenames
+            newname = f"{slugify(image.title)}_{slugify(image.author.firstname)}_{slugify(image.author.surname)}.jpg"
+            myzip.write(imagefile, newname)
+
+    zip_buffer.seek(0)  # Go to the beginning of the BytesIO object
+
+    response = FileResponse(zip_buffer, as_attachment=True, filename=zipname)
+    return response

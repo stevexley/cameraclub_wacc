@@ -11,7 +11,10 @@
                 <div>
                     {% if event.starts|date:"Y-m-d" >= todays_date %}
                         {% if competition.judge.person and user.person == competition.judge.person %}
-                        {% elif "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position %}
+                            <a class="btn btn-block btn-primary mb-2"
+                            href="{% url 'judge_notes' event.id %}">Notes for the Judge</a>
+                        {% endif %}
+                        {% if "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position %}
                                 <a class="btn btn-block btn-primary mb-2"
                                 href="{% url 'judge_notes' event.id %}">Notes for the Judge</a>
                         {% endif %}
@@ -29,13 +32,15 @@
                                                 <a class="btn btn-outline-primary float-right mr-1"
                                                     href="{% url 'end_of_year_entry_colour' %}">Select Entries</a>
                                             {% elif "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position and "Mono Prints" in competition.type.type %}
-                                            <div class="w-40">
+                                            <div class="w-50">
                                                 <a class="btn btn-primary float-right mr-1"
                                                     href="{% url 'end_of_year_entry_mono_prints' %}">Select Entries</a>
                                                 <a class="btn btn-primary float-right mr-1"
                                                     href="{% url 'end_of_year_entry_mono_labels' %}">Labels</a>
                                                 <a class="btn btn-primary float-right mr-1"
                                                     href="{% url 'list_entries' competition.id %}">List of Entries</a>
+                                                <a class="btn btn-primary float-right mr-1"
+                                                    href="{% url 'create_zip' competition.id %}">Download Zip</a>
                                             </div>
                                             {% elif "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position and "Colour Prints" in competition.type.type %}
                                                 <a class="btn btn-primary ml-auto"
@@ -49,13 +54,24 @@
                                                href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
                                         {% endif %}
                                         {% if competition.judge.person and user.person == competition.judge.person %}
-                                        {% elif "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position %}
                                             {% if "igital" in competition.type.type or "ickford" in competition.type.type %}
                                             <div class="w-25">
                                                 <a class="btn btn-primary float-right mr-1"
                                                     href="{% url 'list_entries' competition.id %}">List of Entries</a>
                                                 <a class="btn btn-primary float-right mr-1"
                                                     href="{% url 'view_entries' competition.id %}">View Entries</a>
+                                            </div>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position %}
+                                            {% if "igital" in competition.type.type or "ickford" in competition.type.type %}
+                                            <div class="w-50">
+                                                <a class="btn btn-primary float-right mr-1"
+                                                    href="{% url 'list_entries' competition.id %}">List of Entries</a>
+                                                <a class="btn btn-primary float-right mr-1"
+                                                    href="{% url 'view_entries' competition.id %}">View Entries</a>
+                                                <a class="btn btn-primary float-right mr-1"
+                                                    href="{% url 'create_zip' competition.id %}">Download Zip</a>
                                             </div>
                                             {% endif %}
                                         {% endif %}
@@ -77,13 +93,24 @@
                                                href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
                                         {% endif %}
                                         {% if competition.judge.person and user.person == competition.judge.person %}
-                                        {% elif "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position %}
                                             {% if "igital" in competition.type.type %}
                                             <div class="w-25">
                                                 <a class="btn btn-primary float-right mr-1"
                                                     href="{% url 'list_entries' competition.id %}">List of Entries</a>
-                                                <a class="btn btn-outline-primary float-right mr-1"
+                                                <a class="btn btn-primary float-right mr-1"
                                                     href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                                            </div>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position %}
+                                            {% if "igital" in competition.type.type %}
+                                            <div class="w-25">
+                                                <a class="btn btn-primary float-right mr-1"
+                                                    href="{% url 'list_entries' competition.id %}">List of Entries</a>
+                                                <a class="btn btn-primary float-right mr-1"
+                                                    href="{% url 'competition_judge' competition.id %}">View Entries</a>
+                                                <a class="btn btn-primary float-right mr-1"
+                                                    href="{% url 'create_zip' competition.id %}">Download Zip</a>
                                             </div>
                                             {% endif %}
                                         {% endif %}

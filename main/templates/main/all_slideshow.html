@@ -21,7 +21,7 @@
                             <div class="carousel-item {% if forloop.parentloop.last %}{% if forloop.first %}active{% endif %}{% endif %}">
                                 <div class="d-flex align-items-center justify-content-center min-vh-100">
                                     {% if image.photo %}
-                                        <img src="{{ image.photo.url }}" alt="{{ image.title }}">
+                                        <img data-src="{{ image.photo.url }}" class="lazy-load" alt="{{ image.title }}">
                                     {% else %}
                                         <img src="{{ image.photo }}" alt="{{ image.title }}">
                                     {% endif %}
@@ -55,7 +55,22 @@
         wrap: true, // Set wrap option to false to prevent looping back to the beginning
         pause: false, // Disable pause on hover
     });
-    })
+    // Lazy-load images
+    const lazyLoadImages = () => {
+        const images = document.querySelectorAll('.carousel-item img.lazy-load');
+        images.forEach(img => {
+            if (img.dataset.src) {
+                img.src = img.dataset.src;
+                img.removeAttribute('data-src');
+                img.classList.remove('lazy-load');
+            }
+        });
+    };
+
+    // Trigger lazy loading
+    lazyLoadImages();
+
+    });
   </script>
 </html>
 

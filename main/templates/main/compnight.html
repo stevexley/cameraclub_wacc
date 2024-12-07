@@ -20,7 +20,7 @@
              href="{% url 'edit_member_awards' comp.id %}">Edit Member Awards - {{ comp.type }}</a>
           </div>
         {% endfor %}
-        <a class="btn btn-outline-primary" href="{% url 'all_slideshow' competitions.first.event.id %}" >Image Slideshow</a><br/>
+        <a class="btn btn-outline-primary" href="{% url 'all_slideshow' competitions.last.event.id %}" >Image Slideshow</a><br/>
         </div>
       </div>
     </div>

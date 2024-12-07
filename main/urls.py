@@ -1,6 +1,6 @@
 from django.urls import path, include
 from .views import *
-from .utils import createwaccevents, move_imported_events, move_comps_to_1st, award_gold, award_silver, award_bronze, import_pics, cleanup_photos
+from .utils import *
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -44,6 +44,7 @@ urlpatterns = [
     path('competitions/<int:pk>/judge_slideshow/', CompNightJudgesView.as_view(), name='judge_slideshow'),
     path('competitions/<int:pk>/edit_judge_awards/', JudgeAwardUpdateView.as_view(), name='edit_judge_awards'),
     path('competitions/<int:pk>/edit_member_awards/', MemberAwardUpdateView.as_view(), name='edit_member_awards'),
+    path('competitions/<int:comp_pk>/create_zip', zip_comp_images, name='create_zip'),
     path('images/<int:pk>/addphoto', UploadPhotoView.as_view(), name='upload_photo'),
     path('add-to-gallery/<int:gallery_id>', AddToGalleryView.as_view(), name='add_to_gallery'),
 #    path('end-of-year-entry/', EndOfYearEntryView.as_view(), name='end_of_year_entry'),
