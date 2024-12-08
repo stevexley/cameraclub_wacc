@@ -305,7 +305,7 @@ def zip_comp_images(request, comp_pk):
         for image in images:
             imagefile = os.path.join(settings.MEDIA_ROOT, str(image.photo))
             # Slugify for safe filenames
-            newname = f"{slugify(image.title)}_{slugify(image.author.firstname)}_{slugify(image.author.surname)}.jpg"
+            newname = f"{slugify(image.author.firstname)}-{slugify(image.author.surname)}_{slugify(image.title)}.jpg"
             myzip.write(imagefile, newname)
 
     zip_buffer.seek(0)  # Go to the beginning of the BytesIO object
