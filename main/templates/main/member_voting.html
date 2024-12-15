@@ -22,7 +22,7 @@
                                             id="vote_{{ image.id }}_{{ vote_option.id }}"
                                             name="{{ vote_option.id }}"
                                             value="{{ image.id }}"
-                                            {% if voter = image.author %} disabled {% endif %}
+                                            {% if voter == image.author %} disabled {% endif %}
                                     >
                                     <label class="form-check-label mr-2"
                                             id="vote_label_{{ image.id }}_{{ vote_option.id }}"
