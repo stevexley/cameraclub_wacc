@@ -243,9 +243,9 @@ def setup_competition_night(request, event_id):
 
             if colour_or_mono == 'colour':
                 opencolourprint = CompetitionType.objects.get(active=True,
-                                                         type = 'Colour Open Print')
+                                                         type = 'Open Colour Prints')
                 competition1 = Competition.objects.create(
-                        subject=Subject.objects.get(subject="Open"),
+                        subject=Subject.objects.get(subject="Open Colour"),
                         open_for_entries=event.starts - timedelta(days = 90),
                         entries_close=event.starts - timedelta(days = 8),
                         judging_closes=event.ends - timedelta(hours = 1),
@@ -255,9 +255,9 @@ def setup_competition_night(request, event_id):
                 competition1.save()
                 
                 opencolourdigital = CompetitionType.objects.get(active=True,
-                                                         type = 'Colour Open Digital')
+                                                         type = 'Open Colour Digital')
                 competition2 = Competition.objects.create(
-                        subject=Subject.objects.get(subject="Open"),
+                        subject=Subject.objects.get(subject="Open Colour"),
                         open_for_entries=event.starts - timedelta(days = 90),
                         entries_close=event.starts - timedelta(days = 8),
                         judging_closes=event.ends - timedelta(days = 2),
@@ -267,21 +267,21 @@ def setup_competition_night(request, event_id):
                 competition2.save()
             else:
                 openmonoprint = CompetitionType.objects.get(active=True,
-                                                         type = 'Mono Open Print')
+                                                         type = 'Open Mono Prints')
                 competition1 = Competition.objects.create(
-                        subject=Subject.objects.get(subject="Open"),
-                        open_for_entries=event.starts - timedelta(days = 90),
-                        entries_close=event.starts - timedelta(days = 8),
-                        judging_closes=event.ends - timedelta(hours = 1),
+                        subject=Subject.objects.get(subject="Open Mono"),
+                        open_for_entries=event.starts,
+                        entries_close=event.starts,
+                        judging_closes=event.ends,
                         type=openmonoprint,
                         event=event
                 )
                 competition1.save()
                 
                 openmonodigital = CompetitionType.objects.get(active=True,
-                                                         type = 'Mono Open Digital')
+                                                         type = 'Open Mono Digital')
                 competition2 = Competition.objects.create(
-                        subject=Subject.objects.get(subject="Open"),
+                        subject=Subject.objects.get(subject="Open Mono"),
                         open_for_entries=event.starts - timedelta(days = 90),
                         entries_close=event.starts - timedelta(days = 8),
                         judging_closes=event.ends - timedelta(days = 2),
@@ -291,12 +291,12 @@ def setup_competition_night(request, event_id):
                 competition2.save()
                 
             setprint = CompetitionType.objects.get(active=True,
-                                                         type = 'Set Print')
+                                                         type = 'Set Prints')
             competition3 = Competition.objects.create(
                     subject=set_subject[0],
-                    open_for_entries=event.starts - timedelta(days = 90),
-                    entries_close=event.starts - timedelta(days = 8),
-                    judging_closes=event.ends - timedelta(hours = 1),
+                    open_for_entries=event.starts,
+                    entries_close=event.starts,
+                    judging_closes=event.ends,
                     type=setprint,
                     event=event
             )
@@ -412,6 +412,7 @@ class MemberVotingView(LoginRequiredMixin, View):
             )
             context = {
                 'competition': competition,
+                'voter': request.user.person,
                 'images': images,
                 'image_index': image_index,
                 'vote_options': vote_options,

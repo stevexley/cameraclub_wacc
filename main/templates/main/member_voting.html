@@ -17,11 +17,13 @@
                         <ul class="list-unstyled">
                             {% for image in images %}
                                 <div class="form-check form-check-inline">
-                                    <input class="form-check-input"
+                                    <input class="form-check-input"                                            
                                             type="radio"
                                             id="vote_{{ image.id }}_{{ vote_option.id }}"
                                             name="{{ vote_option.id }}"
-                                            value="{{ image.id }}">
+                                            value="{{ image.id }}"
+                                            {% if voter = image.author %} disabled {% endif %}
+                                    >
                                     <label class="form-check-label mr-2"
                                             id="vote_label_{{ image.id }}_{{ vote_option.id }}"
                                             for="vote_{{ image.id }}_{{ vote_option.id }}">
