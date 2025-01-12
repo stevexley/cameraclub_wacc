@@ -20,6 +20,8 @@ from .models import Image, Event, Competition, CompetitionType, Person, Member, 
 from .forms import *
 from datetime import datetime, timedelta
 import subprocess
+import calendar
+from collections import defaultdict
 
 class ProfileView(LoginRequiredMixin, DetailView):
     login_url = "accounts/login/"
@@ -118,7 +120,13 @@ class NewslettersView(YearArchiveView):
     
     def get_queryset(self):
         year = self.get_year()
-        return Newsletter.objects.filter(issue_date__year=year).order_by('issue_date')
+        news = Newsletter.objects.filter(issue_date__year=year).order_by('issue_date')
+        if news:
+            return news
+        else:
+            year = self.get_year() - 1
+            news = Newsletter.objects.filter(issue_date__year=year).order_by('issue_date')
+            return news
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -139,7 +147,7 @@ class EventsView(YearArchiveView):
     make_object_list = True
     allow_future = True
     context_object_name = 'events'
-    template_name = 'main/events.html'
+    template_name = 'main/new_events.html'
     
     def get_year(self):
         """Return the year for which this view should display data.
@@ -165,6 +173,13 @@ class EventsView(YearArchiveView):
             context['previous_year'] = year - 1
         if Event.objects.filter(starts__year=(year + 1)):
             context['next_year'] = year + 1
+        events_by_month = defaultdict(list)
+        events = self.object_list
+        for event in events:
+            month = event.starts.strftime('%B')
+            events_by_month[month].append(event)
+        context['events_by_month'] = dict(events_by_month)
+        context['months'] = list(calendar.month_name)[1:]
         return context
 
 @permission_required("main.change_event")
@@ -189,12 +204,54 @@ def generate_pdf_thumbnail(pdf_path, thumbnail_path):
 
 class EventDetailView(DetailView):
     model = Event
-    template_name = 'main/event_detail.html'
+    template_name = 'main/new_event_detail.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['comps'] = Competition.objects.filter(event = context['object'])
+        context['subject'] = Subject.objects.filter(competition__event = context['object'],
+                                                    competition__type__type__contains = 'Set Digital').first()
+        context['judge'] = Judge.objects.filter(competition__event = context['object']).first()
         context['user'] = self.request.user
+        context['judge_awards'] = []
+        context['member_awards'] = []
+
+        # if no comps don't try to count votes or get awards
+        images = Image.objects.filter(competitions__in = context['comps'])
+        if not images:
+            return context
+        for comp in context['comps']:
+            comp_member_awards = None
+            comp_member_awards = Award.objects.filter(competition__id = comp.id,
+                                                            type__awarded_by__members = True
+                                                            ).order_by('-type__points')
+            if context['member_awards']:
+                context['member_awards'] = context['member_awards'] | comp_member_awards
+            else:
+                context['member_awards'] = comp_member_awards
+            '''if there are no member awards, count the votes and create the awards.'''
+            if not comp_member_awards:
+                '''check to make sure voting has closed.
+                If it has closed count the votes, create the awards and add them to the context'''
+                if timezone.make_naive(comp.judging_closes) < timezone.make_naive(timezone.now()):
+                    try:
+                        count_votes(comp)
+                        comp_member_awards = Award.objects.filter(competition__id = comp.id,
+                                                            type__awarded_by__members = True
+                                                            ).order_by('-type__points')
+                        if context['member_awards']:
+                            context['member_awards'] = context['member_awards'] | comp_member_awards
+                        else:
+                            context['member_awards'] = comp_member_awards
+                    except:
+                        pass            
+            comp_judge_awards = Award.objects.filter(competition__id = comp.id,
+                                                            type__awarded_by__judge = True
+                                                            ).order_by('-type__points')
+            if context['judge_awards']:
+                context['judge_awards'] = context['judge_awards'] | comp_judge_awards
+            else:
+                context['judge_awards'] = comp_judge_awards
         return context
     
 class UploadEventFileView(PermissionRequiredMixin, SuccessMessageMixin, UpdateView):

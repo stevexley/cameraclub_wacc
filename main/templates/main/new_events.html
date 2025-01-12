@@ -1,0 +1,135 @@
+{% extends "main/base.html" %}
+{% load static %}
+{% block content %}
+    <div class="container">
+        <div class="col">
+            <div class="row justify-content-between mb-3 text-center">
+                <div class="col-2">
+                    {% if previous_year %}
+                        <a class="btn btn-outline-primary"
+                           href="{% url 'events' year=previous_year %}">{{ previous_year }}</a>
+                    {% endif %}
+                </div>
+                <div class="col">
+                    <h1>Events for {{ year.year }}</h1>
+                </div>
+                <div class="col-2">
+                    {% if next_year %}
+                        <a class="btn btn-outline-primary float-end"
+                           href="{% url 'events' year=next_year %}">{{ next_year }}</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% now "Y-m-d" as todays_date %}
+            {% now "F" as todays_month %}
+            {% now "Y-m-d H:i" as right_now %}
+            <div class="content">
+                {% for month, events in events_by_month.items %}
+                    <div class="card mb-2 px-2 pt-2"><h3>{{ month }}</h3>
+                    <div id="{{ month|lower }}" class="card-deck mb-4">
+                        {% for event in events %}
+                            {% if event.starts|date:"F" == todays_month %}
+                            <span class="hidden" id="today_bookmark"></span>
+                            {% endif %}
+                            
+                            <div class="card event-card">
+                                <a href="{% url 'event' event.id %}" class="card-link">
+                                <div class="image-container">
+                                    {% if event.image.photo %}
+                                    <img src="{{ event.image.photo.url }}" class="card-img-top" alt="{{ event.image.title }}">
+                                    {% elif event.file and 'jpg' in event.extension %}
+                                        <img class="img-thumbnail" src="{{ event.file.url }}" class="card-img-top" alt="Image related to event">
+                                    {% elif event.file and 'pdf' in event.extension %}
+                                        <div id="pdf-viewer" class="embed-responsive"></div>
+                                    {% else %}
+                                        {% if event.competition_set.all %}
+                                        {% for comp in event.competition_set.all %}
+                                        {% if comp.type.type == 'Open Colour Digital' %}
+                                            <img src="{% get_media_prefix %}{{ 'photos/Set_World of Colours_Stan Bendkowski.jpg' }}" class="card-img-top" alt="{{ event.image.title }}">
+                                        {% elif comp.type.type == 'Open Mono Digital' %}
+                                            <img src="{% get_media_prefix %}{{ 'photos/m_WAC_Jocelyn Manning_Checking Out.jpg' }}" class="card-img-top" alt="{{ event.image.title }}">
+                                        {% endif %}
+                                        {% endfor %}
+                                        {% endif %}
+                                    {% endif %}
+                                    <div class="start-date">{{ event.starts|date:"j" }}</div>
+                                    <div class="event-name-overlay">
+                                        {{ event.name }}
+                                    </div>
+                                </div>
+                                {% if event.description %}
+                                <div class="card-body">
+                                    <p class="card-text">{{ event.description|linebreaks }}</p>
+                                </div>
+                                {% endif %}
+                                {% if event.competition_set.all %}
+                                <ul class="list-group list-group-flush">
+                                    {% for comp in event.competition_set.all %}
+                                    {% if comp.type.type == 'Open Colour Digital' %}
+                                        <li class="list-group-item">{{ comp.subject }}</li>
+                                    {% elif comp.type.type == 'Open Mono Digital' %}
+                                        <li class="list-group-item">{{ comp.subject }}</li>
+                                    {% elif comp.type.type == "Set Digital" %}
+                                        <li class="list-group-item">Set Subject: {{ comp.subject }}</li>
+                                        {% if comp.open_for_entries|date:"Y-m-d H:i" > right_now  %}
+                                            <li class="list-group-item">Digital Entries Open {{ comp.open_for_entries|date:"M jS" }} at {{ comp.open_for_entries|date:"g:i" }}</li>
+                                        {% elif comp.entries_close|date:"Y-m-d H:i" > right_now  %}
+                                            <li class="list-group-item">Digital Entries Close {{ comp.entries_close|date:"jS" }} at {{ comp.entries_close|date:"g:i" }}</li>
+                                        {% elif comp.open_for_juding|date:"Y-m-d H:i" > right_now and comp.members_vote %}
+                                            <li class="list-group-item">Voting Starts {{ comp.open_for_judging|date:"jS" }} at {{ comp.open_for_judging|date:"g:i" }}</li>
+                                        {% elif comp.juding_closes|date:"Y-m-d H:i" > right_now and comp.members_vote %}
+                                            <li class="list-group-item">Voting Closes {{ comp.judging_closes|date:"jS" }} at {{ comp.judging_closes|date:"g:i" }}</li>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                  </ul>
+                                {% endif %}
+                            </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div>
+                {% if todays_month > 9 %}
+                    {% if user.person.position == 'Webmaster' %}
+                        <div class="d-grid gap-2">
+                            <a class="btn btn-primary" href="{% url 'create-events' %}">Create All Next Year's Events</a>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block scripts %}
+<script type="module">
+    import { GlobalWorkerOptions, getDocument } from '{% static 'pdfjs/build/pdf.mjs' %}';
+
+    // URL of the PDF file
+    var pdfUrl = "{{ event.file.url }}";
+
+    // Set the path to the worker script
+    GlobalWorkerOptions.workerSrc = '{% static 'pdfjs/build/pdf.worker.mjs' %}';
+
+    getDocument(pdfUrl).promise.then(function(pdf) {
+        pdf.getPage(1).then(function(page) {
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
+            var viewport = page.getViewport({ scale: 1 });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            var renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+            page.render(renderContext);
+            document.getElementById('pdf-viewer').appendChild(canvas);
+        });
+    });
+</script>
+{% endblock scripts %}
+

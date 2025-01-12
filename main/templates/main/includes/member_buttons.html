@@ -1,0 +1,11 @@
+{% if 'End of Year' in competition.type.type %}
+    {% if competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" >= todays_date and "Mono Digital" in competition.type.type %}
+        <a class="btn btn-outline-primary mx-1" href="{% url 'end_of_year_entry_mono' %}">Select Entries</a>
+    {% elif competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" >= todays_date and "Colour Digital" in competition.type.type %}
+        <a class="btn btn-outline-primary float-right mx-1" href="{% url 'end_of_year_entry_colour' %}">Select Entries</a>
+    {% endif %}
+{% elif competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" >= todays_date and "igital" in competition.type.type %}
+    <a class="btn btn-outline-primary float-right mx-1" href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
+{% elif competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type and competition.members_vote %}
+    <a class="btn btn-outline-primary float-right mx-1" href="{% url 'competition_vote' competition.id %}">Vote</a>
+{% endif %}

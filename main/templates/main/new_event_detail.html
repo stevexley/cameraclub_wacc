@@ -1,0 +1,247 @@
+{% extends "main/base.html" %}
+{% load static %}
+{% block content %}
+    <div class="container">
+        {% now "Y-m-d" as todays_date %}
+        <div class="col">
+            <h1>{{ event.name }}</h1>
+            <h3>{{ event.starts.date }} {{ event.starts|time:"H:i" }} - {{ event.ends|time:"H:i" }}</h3>
+            {% if event.description %}<p>{{ event.description }}</p>{% endif %}
+            {% if event.competition_set.all %}
+                <div>
+                    {% if subject %}
+                        <div class="card my-2 p-3">
+                        <h3>Set Subject: {{ subject.subject }}</h3>
+                        <h5>{{ subject.description }}</h5>
+                        </div>
+                    {% endif %}
+                    {% if event.starts|date:"Y-m-d" >= todays_date %}
+                        {% if judge.person and user.person == judge.person %}
+                            <a class="btn btn-block btn-primary mb-2"
+                            href="{% url 'judge_notes' event.id %}">Notes for the Judge</a>
+                        {% elif "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position %}
+                                <a class="btn btn-block btn-primary mb-2"
+                                href="{% url 'judge_notes' event.id %}">Notes for the Judge</a>
+                        {% endif %}
+                        <h3>Competitions held on the night will be:</h3>
+                        {% comment %} 
+                        List of competitions, user type decides which buttons to include
+                        includes have rules based on competition type
+                        {% endcomment %}
+                        <ul class="list-group">
+                            {% for competition in event.competition_set.all %}
+                            <li class="list-group-item d-flex justify-content-between">
+                                <h4>{{ competition.type }}</h4>
+                                <div>
+                                {% if user.person.member.current %}
+                                    {% include "main/includes/member_buttons.html" %}
+                                {% endif %}
+                                {% if judge.person and user.person == judge.person %}
+                                    {% include "main/includes/judge_buttons.html" %}
+                                {% endif %}
+                                {% if "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position or "Webmaster" in user.person.position.all.first.position %}
+                                    {% include "main/includes/comp_dir_buttons.html" %}
+                                {% endif %}
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% if perms.main.change_event %}
+                            <div class="my-1">
+                                <a class="btn btn-primary" href="{% url 'create_comp' event.id %}">Add Competition</a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                    <div class="card text-center">
+                        <div class="card-header">
+                          <h3>Competitions held on the night were:</h3>
+                          <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                            {% for comp in comps %}
+                                {% if forloop.first %}
+                                <button class="nav-link active" id="{{ comp.type|slugify }}-tab" data-bs-toggle="tab" data-bs-target="#{{comp.type|slugify }}" type="button" role="tab" aria-controls="{{ comp.type|slugify }}" aria-selected="true">{{ comp.type }}</button>
+                                {% else %}
+                                <button class="nav-link" id="{{ comp.type|slugify }}-tab" data-bs-toggle="tab" data-bs-target="#{{comp.type|slugify }}" type="button" role="tab" aria-controls="{{ comp.type|slugify }}" aria-selected="false">{{ comp.type }}</button>
+                                {% endif %}
+                            {% endfor %}
+                          </ul>
+                        </div>
+                        <div class="card-body tab-content" id="nav-tabContent">
+                        {% for comp in comps %}
+                            {% if forloop.first %}
+                            <div class="tab-pane fade show active" id="{{ comp.type|slugify }}" role="tabpanel" aria-labelledby="{{ comp.type|slugify }}-tab">
+                            {% else %}
+                            <div class="tab-pane fade" id="{{ comp.type|slugify }}" role="tabpanel" aria-labelledby="{{ comp.type|slugify }}-tab">
+                            {% endif %}
+                            {% comment %} if there are awards and the user is a current member {% endcomment %}
+                            {% if user.person.member.current %}
+                            {% if comp.award_set.all %}
+                                {% if judge_awards.all %}
+                                  <div class="col">
+                                    <h3>Judge's Awards</h3>
+                                    {% if comp.judge %}<h4>Awarded by {{ comp.judge }}</h4>{% endif %}
+                                    <table class="table table-hover wacc-table">
+                                      <thead>
+                                        <th scope="col">Award</th>
+                                        <th scope="col">Image Name</th>
+                                        <th scope="col">Author</th>
+                                      </thead>
+                                      <tbody>
+                                        {% for award in judge_awards %}
+                                            {% if award.competition == comp %}
+                                          <tr>
+                                            <td>{{ award.type.name }}</td>
+                                            <td>{{ award.image.title }}</td>
+                                            <td>{{ award.image.author }}</td>
+                                          </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                      </tbody>
+                                    </table>
+                                  {% else %}
+                                    <h4>No Judge's Awards</h4>
+                                  </div>
+                                {% endif %}
+                                {% if perms.main.change_competition %}
+                                  <a class="btn btn-primary btn-block mb-2"
+                                     href="{% url 'edit_judge_awards' comp.id %}">Edit Judge Awards</a>
+                                {% endif %}
+                                {% if member_awards.all %}
+                                    <div class="col">
+                                      <h3>Member's Awards</h3>
+                                      <table class="table table-hover wacc-table">
+                                        <thead>
+                                          <th scope="col">Award</th>
+                                          <th scope="col">Image Name</th>
+                                          <th scope="col">Author</th>
+                                        </thead>
+                                        <tbody>
+                                          {% for award in member_awards %}
+                                          {% if award.competition == comp %}
+                                            <tr>
+                                              <td>{{ award.type.name }}</td>
+                                              <td>{{ award.image.title }}</td>
+                                              <td>{{ award.image.author }}</td>
+                                            </tr>
+                                            {% endif %}
+                                          {% endfor %}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                {% else %}
+                                    <div class="col">
+                                        <h4>No Members' Awards</h4>
+                                {% endif %}
+                                    {% if perms.main.change_competition %}
+                                        <a class="btn btn-primary btn-block"
+                                         href="{% url 'edit_member_awards' comp.id %}">Edit Member Awards</a>
+                                        <a class="btn btn-primary btn-block"
+                                         href="{% url 'competition_add_images' comp.id %}">Add Images</a>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            {% endif %}
+                            {% comment %} if the comp has any images uploaded {% endcomment %}
+                            {% if comp.images.all %}
+                            </br>
+                            {% if 'Open' or 'End of Year' in comp.type.type %}
+                                <h4>{{ comp.type }} Awarded Images:</h4>
+                            {% else %}
+                                <h4>{{ comp.type }} (Subject: {{ comp.subject }}) Awarded Images:</h4>
+                            {% endif %}
+                            <ul class="image-gallery">
+                                {% for image in comp.images.all %}
+                                    {% if image.award_set.all %}
+                                    {% if image.photo %}
+                                        {% include "main/includes/gallery_items.html" %}
+                                    {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+            {% else %}
+            {% if "ompetition" in event.name %}
+                <div>
+                    {% if event.competition_set.all %}
+                        <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add Competition</a>
+                    {% else %}
+                        <a class="btn btn-primary" href="{% url 'create_compnight' event.id %}">Setup Competition Night</a>
+                        <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add a Single Competition</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% endif %}
+            {% comment %} If the event has galleries and they are public, show them {% endcomment %}
+            {% if event.gallery_set.all %}
+                {% for gallery in event.gallery_set.all %}
+                    <div>
+                        {% if gallery.public_after|date:"Y-m-d" < todays_date %}
+                            <h3>Images from {{ gallery.name }}</h3>
+                            {% comment %} if the gallery has any images uploaded {% endcomment %}
+                            <ul class="image-gallery">
+                                {% for image in gallery.images.all %}
+                                {% if image.photo %}
+                                    {% include "main/includes/gallery_items.html" %}
+                                {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                        {% if gallery.member_upload_from|date:"Y-m-d" <= todays_date %}
+                            {% if gallery.member_upload_until|date:"Y-m-d" >= todays_date %}
+                                <a class="btn btn-primary" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            {% if event.file %}
+                {% if 'jpg' in event.extension %}
+                    <img class="img-thumbnail" src="{{ event.file.url }}" alt="Click to View">
+                {% elif 'pdf' in event.extension %}
+                    <div id="pdf-viewer" class="embed-responsive"></div>
+                {% elif 'docx' in event.extension %}
+                    <!-- Render a Word document icon or thumbnail image -->
+                {% endif %}
+            {% endif %}
+            {% if perms.main.change_event %}
+                <a class="btn btn-primary mt-1"
+                href="{% url 'event_add_file' event.id %}">Edit Event Details</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}
+{% block scripts %}
+    {% if event.file %}
+        <script type="module">
+    import { GlobalWorkerOptions, getDocument } from '{% static 'pdfjs/build/pdf.mjs' %}';
+
+    // URL of the PDF file
+    var pdfUrl = "{{ event.file.url }}";
+
+    // Set the path to the worker script
+    GlobalWorkerOptions.workerSrc = '{% static 'pdfjs/build/pdf.worker.mjs' %}';
+
+    getDocument(pdfUrl).promise.then(function(pdf) {
+        pdf.getPage(1).then(function(page) {
+            var canvas = document.createElement('canvas');
+            var context = canvas.getContext('2d');
+            var viewport = page.getViewport({ scale: 1 });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            var renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+            page.render(renderContext);
+            document.getElementById('pdf-viewer').appendChild(canvas);
+        });
+    });
+        </script>
+    {% endif %}
+{% endblock scripts %}

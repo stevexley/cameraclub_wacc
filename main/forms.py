@@ -18,7 +18,7 @@ class EventUploadForm(forms.ModelForm):
     
     class Meta:
         model = Event
-        fields = [ 'description', 'file', ]
+        fields = [ 'description', 'file', 'image']
 
 class ImageForm(forms.ModelForm):
     
@@ -127,9 +127,9 @@ class CompForm(forms.ModelForm):
         # Restrict subjects to ones for this year + open
         current_year = datetime.now().year
         self.fields['subject'].queryset = Subject.objects.filter(year=current_year)
-        self.fields['subject'].queryset |= Subject.objects.filter(subject='Open')
+        self.fields['subject'].queryset |= Subject.objects.filter(subject='Open Colour')
         # Set initial value to open as that's the most common one
-        self.fields['subject'].initial = Subject.objects.get(subject='Open')
+        self.fields['subject'].initial = Subject.objects.get(subject='Open Colour')
         self.fields['type'].queryset = CompetitionType.objects.filter(active = True)
         self.fields['judge'].queryset = Judge.objects.filter(current = True)
         # Hide event input as it's already set

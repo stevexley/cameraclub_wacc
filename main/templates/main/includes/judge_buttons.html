@@ -1,0 +1,2 @@
+{% if competition.images.all %} <a class="btn btn-primary mx-1" href="{% url 'list_entries' competition.id %}">List of Entries</a> {% endif %}
+{% if competition.images.all %} <a class="btn btn-primary mx-1" href="{% url 'view_entries' competition.id %}">View Entries</a>{% endif %}

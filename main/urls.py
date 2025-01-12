@@ -23,6 +23,7 @@ urlpatterns = [
     path('1st_events', move_comps_to_1st, name='1st-events'),
     path('import_pics', import_pics, name='import_pics'),
     path('cleanup_photos', cleanup_photos, name='cleanup_photos'),
+    path('set_comp_images', set_comp_images, name='set_comp_images'),
     path('event/<int:event_id>/create_comp', CompCreateView.as_view(), name='create_comp'),
     path('event/<int:event_id>/create_compnight', setup_competition_night, name='create_compnight'),
     path('event/<int:event_id>/judge_notes/', JudgeNotesView.as_view(), name='judge_notes'),

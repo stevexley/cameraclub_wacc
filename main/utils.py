@@ -16,6 +16,7 @@ from django.contrib import messages
 from django.utils.encoding import force_str
 from django.utils.text import slugify
 from django.conf import settings
+from django.contrib.auth.decorators import permission_required
 
 def setTitleCase(title):
     '''This function converts a string into titlecase while ignoring "stopwords"
@@ -122,7 +123,8 @@ def nth_weekday(temp, nth_week, week_day):
     temp += timedelta(days=adj)
     temp += timedelta(weeks=nth_week-1)
     return temp
-    
+
+@permission_required("main.change_event")   
 def createwaccevents(request):
     '''Creates the standard Events for the following year
     Workshops on 1st Monday of each month (Jan - Nov)
@@ -172,6 +174,7 @@ def createwaccevents(request):
 
     return HttpResponse("Events created successfully")
 
+@permission_required("main.change_event")
 def move_imported_events(request):
     '''In the old Access DB all the competition nights were 
     listed as the 1st of the month.  That data has been used 
@@ -191,6 +194,7 @@ def move_imported_events(request):
             
     return HttpResponse("Competition Dates Fixed")
 
+@permission_required("main.change_event")
 def move_comps_to_1st(request):
     '''In the old Access DB all the competition nights were 
     listed as the 1st of the month.  To easy import of that 
@@ -312,3 +316,35 @@ def zip_comp_images(request, comp_pk):
 
     response = FileResponse(zip_buffer, as_attachment=True, filename=zipname)
     return response
+
+def pick_a_pic(event_pk):
+    comps = Competition.objects.filter(event__id = event_pk,
+                                       type__type = 'Set Digital')
+    value = 0
+    for comp in comps:
+        print("Competition: " + str(comp))
+        images = Image.objects.filter(competitions = comp,
+                                    award__type = 1)
+        if not images:
+            images = Image.objects.filter(competitions = comp,
+                                            award__type = 4)
+        for image in images:
+            print(str(image))
+            if image:
+                value = image.id
+                break
+    return value
+
+@permission_required("main.change_event")
+def set_comp_images(request):
+    for event in Event.objects.filter(competition__isnull = False):
+        print("Event: " + str(event))
+        imageid = pick_a_pic(event.id)
+        print("Image ID: " + str(imageid))
+        if imageid > 0:
+            image = Image.objects.get(id = imageid)
+            if image.photo:
+                event.image = image
+                event.save()
+    return HttpResponse(200)
+

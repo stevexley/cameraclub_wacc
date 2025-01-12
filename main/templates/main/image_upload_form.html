@@ -32,9 +32,9 @@
         {% endfor %}
         {% for field in form.visible_fields %}
           <div class="mb-3">
-            {% if field.name == 'print' %}
+            {% comment %} {% if field.name == 'print' %}
             <label class="form-check-label mr-5">{{ field.label }}</label>
-            {% endif %}
+            {% endif %} {% endcomment %}
             {% if field.errors %}
                 <div class="form-control is-invalid">
                     {{ field }}
@@ -42,6 +42,7 @@
                 <div id="{{ field.name }}Feedback" class="invalid-feedback">
                     {{ field.errors }}
                 </div>
+            {% elif field.name == "print" %}
             {% else %}
                 {{ field }}
             {% endif %}
@@ -50,11 +51,11 @@
             {% endif %}
           </div>
         {% endfor %}
-        
-        <div id="previewArea" class="row">
+        <input class="btn btn-outline-primary" type="submit" value="Submit" />
+        <div id="previewArea" class="row mt-1">
           <!-- Image previews will be appended here -->
         </div>
-        <input class="btn btn-outline-primary" type="submit" value="Submit" />
+        
         </form>
 
         

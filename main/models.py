@@ -180,6 +180,7 @@ class Event(models.Model):
     starts = models.DateTimeField()
     ends = models.DateTimeField()
     file = models.FileField(upload_to='files/', null=True, blank=True)
+    image = models.ForeignKey(Image, null=True, blank=True, on_delete=models.CASCADE)
     
     def extension(self):
         name, extension = os.path.splitext(self.file.name)
