@@ -7,18 +7,52 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from .models import Image, Competition, Subject, CompetitionType, Judge, Event, Award, AwardType, Person, User, Member
 from .utils import setTitleCase, checkWidth, checkHeight, checkOneEntry, checkMono
 
-class EventUploadForm(forms.ModelForm):
+# class EventUploadForm(forms.ModelForm):
     
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         for visible in self.visible_fields():
+#             visible.field.widget.attrs['class'] = 'form-control'
+#             visible.field.widget.attrs['placeholder'] = visible.field.label
+#             visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
+    
+#     class Meta:
+#         model = Event
+#         fields = [ 'description', 'file', 'image']
+
+class EventUploadForm(forms.ModelForm):
+    existing_image = forms.ModelChoiceField(
+        queryset=Image.objects.all(),
+        required=False,
+        label="Select Existing Image",
+        widget=forms.Select(attrs={'class': 'form-control', 'aria-describedby': 'existingImageFeedback'})
+    )
+    new_image = forms.ImageField(
+        required=False,
+        label="Upload New Image",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'aria-describedby': 'newImageFeedback'})
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for visible in self.visible_fields():
-            visible.field.widget.attrs['class'] = 'form-control'
             visible.field.widget.attrs['placeholder'] = visible.field.label
-            visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
-    
+
     class Meta:
         model = Event
-        fields = [ 'description', 'file', 'image']
+        fields = ['description', 'file']
+
+    # def clean(self):
+    #     cleaned_data = super().clean()
+    #     existing_image = cleaned_data.get('existing_image')
+    #     new_image = cleaned_data.get('new_image')
+
+    #     if not existing_image and not new_image:
+    #         raise forms.ValidationError("Please either select an existing image or upload a new one.")
+
+        # return cleaned_data
+
+
 
 class ImageForm(forms.ModelForm):
     

@@ -252,7 +252,7 @@ class Competition(models.Model):
             return str(self.event.starts.year) + " " + self.event.name + ": " + self.type.type + " (" + self.subject.subject + ")"
 
     class Meta:
-        ordering = ["-event__starts"]
+        ordering = ["-event__starts", "type__type"]
         
 class Awarder(models.Model):
     id = models.AutoField(primary_key=True)

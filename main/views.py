@@ -208,7 +208,7 @@ class EventDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['comps'] = Competition.objects.filter(event = context['object'])
+        context['comps'] = Competition.objects.filter(event = context['object']).order_by('type.type')
         context['subject'] = Subject.objects.filter(competition__event = context['object'],
                                                     competition__type__type__contains = 'Set Digital').first()
         context['judge'] = Judge.objects.filter(competition__event = context['object']).first()
@@ -263,6 +263,35 @@ class UploadEventFileView(PermissionRequiredMixin, SuccessMessageMixin, UpdateVi
     template_name = 'main/event_upload_form.html'
     success_url = '/events/' + str(datetime.now().year) + '#today_bookmark'
     success_message = "Event Updated"
+
+    def form_valid(self, form):
+        # Get the cleaned data for image handling
+        cleaned_data = form.cleaned_data
+        existing_image = cleaned_data.get('existing_image')
+        new_image = cleaned_data.get('new_image')
+
+        # Process the selected or uploaded image
+        if existing_image:
+            self.object.image = existing_image
+        elif new_image:
+            # Save the new image and associate it with the event
+            new_image_instance = Image.objects.create(
+                title="Uploaded Image",
+                author=self.request.user.person,  # Assuming the logged-in user is linked to Person
+                photo=new_image
+            )
+            self.object.image = new_image_instance
+
+        # Save the event instance
+        self.object.save()
+
+        # Add success message for the image action
+        if existing_image:
+            messages.success(self.request, f"Existing image '{existing_image.title}' selected.")
+        elif new_image:
+            messages.success(self.request, "New image uploaded and associated with the event.")
+        
+        return super().form_valid(form)
 
 class CompCreateView(PermissionRequiredMixin, CreateView):
     model = Competition
