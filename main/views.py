@@ -208,7 +208,7 @@ class EventDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['comps'] = Competition.objects.filter(event = context['object']).order_by('type.type')
+        context['comps'] = Competition.objects.filter(event = context['object'])
         context['subject'] = Subject.objects.filter(competition__event = context['object'],
                                                     competition__type__type__contains = 'Set Digital').first()
         context['judge'] = Judge.objects.filter(competition__event = context['object']).first()
