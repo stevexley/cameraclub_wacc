@@ -32,6 +32,7 @@ urlpatterns = [
     path('competitions/<int:comp_pk>/award_silver/<image_pk>', award_silver, name='award_silver'),
     path('competitions/<int:comp_pk>/award_bronze/<image_pk>', award_bronze, name='award_bronze'),
     path('competitions/<int:pk>/enter/', EnterCompetitionView.as_view(), name='enter_competition'),
+    path('competitions/<int:comp_id>/remove/<int:img_id>', remove_entry, name='remove_entry'),
     path('competitions/<int:competition_id>/vote/', MemberVotingView.as_view(), name='competition_vote'),
     path('competitions/<int:competition_id>/view/', ViewEntriesView.as_view(), name='view_entries'),
     path('competitions/<int:competition_id>/list/', ListEntriesView.as_view(), name='list_entries'),

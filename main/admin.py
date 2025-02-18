@@ -64,7 +64,10 @@ class CompAdmin(admin.ModelAdmin):
     list_display = [ "__str__", "judging_closes" ]
 
 admin.site.register(Awarder)    
-admin.site.register(AwardType)
+
+@admin.register(AwardType)
+class AwardTypeAdmin(admin.ModelAdmin):
+    list_display = [ "name", "awarded_by", "points", "active" ]
 
 @admin.register(Award)
 class GalleryAdmin(admin.ModelAdmin):

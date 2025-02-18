@@ -1,9 +1,11 @@
+
 {% if 'End of Year' in competition.type.type and "Mono Prints" in competition.type.type %}
-    <a class="btn btn-primary float-right mx-1" href="{% url 'end_of_year_entry_mono_prints' %}">Select Entries</a>
-    <a class="btn btn-primary float-right mx-1" href="{% url 'end_of_year_entry_mono_labels' %}">Labels</a>
+    <a class="btn btn-primary float-right mt-1" href="{% url 'end_of_year_entry_mono_prints' %}">Select Entries</a>
+    <a class="btn btn-primary float-right mt-1" href="{% url 'end_of_year_entry_mono_labels' %}">Labels</a>
 {% elif 'End of Year' in competition.type.type and "Colour Prints" in competition.type.type %}
-    <a class="btn btn-primary float-right mx-1" href="{% url 'end_of_year_entry_colour_labels' %}">Labels</a>
+    <a class="btn btn-primary float-right mt-1" href="{% url 'end_of_year_entry_colour_labels' %}">Labels</a>
 {% endif %}
-{% if competition.images.all %}<a class="btn btn-primary mx-1" href="{% url 'list_entries' competition.id %}">List of Entries</a>{% endif %}
-{% if competition.images.all %}<a class="btn btn-primary mx-1" href="{% url 'view_entries' competition.id %}">View Entries</a>{% endif %}
-{% if competition.images.all %}<a class="btn btn-primary mx-1" href="{% url 'create_zip' competition.id %}">Download Zip</a>{% endif %}
+
+{% if competition.images.all %}<a class="btn btn-primary mt-1" href="{% url 'list_entries' competition.id %}">List of Entries</a>{% endif %}
+{% if competition.images.all %}<a class="btn btn-primary mt-1" href="{% url 'view_entries' competition.id %}">View Entries</a>{% endif %}
+{% if competition.images.all %}<a class="btn btn-primary mt-1" href="{% url 'create_zip' competition.id %}">Download Zip</a>{% endif %}

@@ -5,7 +5,17 @@
         <a class="btn btn-outline-primary float-right mx-1" href="{% url 'end_of_year_entry_colour' %}">Select Entries</a>
     {% endif %}
 {% elif competition.open_for_entries|date:"Y-m-d H:i" < todays_date and competition.entries_close|date:"Y-m-d H:i" >= todays_date and "igital" in competition.type.type %}
-    <a class="btn btn-outline-primary float-right mx-1" href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
+    {% for img in user_images %}
+        {% if competition in img.competitions.all %}
+            <div class="card smallcard">
+                <img class="picframe m-1" loading="lazy" src="{{ img.photo.url }}" alt="{{ img.title }}">
+                <a class="btn btn-outline-primary m-1" href="{% url 'remove_entry' comp_id=competition.id img_id=img.id %}">Remove Entry</a>
+            </div>
+        {% endif %}
+    {% endfor %}
+    {% if not competition.has_entries %}
+        <a class="btn btn-outline-primary float-right mx-1" href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
+    {% endif %}
 {% elif competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type and competition.members_vote %}
     <a class="btn btn-outline-primary float-right mx-1" href="{% url 'competition_vote' competition.id %}">Vote</a>
 {% endif %}

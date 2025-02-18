@@ -322,14 +322,12 @@ def pick_a_pic(event_pk):
                                        type__type = 'Set Digital')
     value = 0
     for comp in comps:
-        print("Competition: " + str(comp))
         images = Image.objects.filter(competitions = comp,
                                     award__type = 1)
         if not images:
             images = Image.objects.filter(competitions = comp,
                                             award__type = 4)
         for image in images:
-            print(str(image))
             if image:
                 value = image.id
                 break
@@ -338,13 +336,17 @@ def pick_a_pic(event_pk):
 @permission_required("main.change_event")
 def set_comp_images(request):
     for event in Event.objects.filter(competition__isnull = False):
-        print("Event: " + str(event))
         imageid = pick_a_pic(event.id)
-        print("Image ID: " + str(imageid))
-        if imageid > 0:
-            image = Image.objects.get(id = imageid)
-            if image.photo:
-                event.image = image
-                event.save()
+        
     return HttpResponse(200)
 
+@permission_required("main.change_event")
+def set_comp_image(request, event_pk):
+    event = Event.objects.get(id = event_pk)
+    imageid = pick_a_pic(event.id)
+    if imageid > 0:
+        image = Image.objects.get(id = imageid)
+        if image.photo:
+            event.image = image
+            event.save()
+    return HttpResponse(200)

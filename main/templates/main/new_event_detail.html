@@ -29,7 +29,7 @@
                         includes have rules based on competition type
                         {% endcomment %}
                         <ul class="list-group">
-                            {% for competition in event.competition_set.all %}
+                            {% for competition in comps %}
                             <li class="list-group-item d-flex justify-content-between">
                                 <h4>{{ competition.type }}</h4>
                                 <div>
@@ -40,7 +40,9 @@
                                     {% include "main/includes/judge_buttons.html" %}
                                 {% endif %}
                                 {% if "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position or "Webmaster" in user.person.position.all.first.position %}
+                                    <div>
                                     {% include "main/includes/comp_dir_buttons.html" %}
+                                    </div>
                                 {% endif %}
                                 </div>
                             </li>

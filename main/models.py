@@ -173,7 +173,8 @@ post_delete.connect(
 class Event(models.Model):
     '''An Event is anything with a start and end datetime and can include galleries and/or competitions.
     The most common Events are competition nights which will have a number of competitions, workshops and outings,
-    these may have non-competition galleries.'''
+    these may have non-competition galleries.
+    Events can be hidden and only visible to Comp Director, *President & listed in extra_viewers'''
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
@@ -181,6 +182,9 @@ class Event(models.Model):
     ends = models.DateTimeField()
     file = models.FileField(upload_to='files/', null=True, blank=True)
     image = models.ForeignKey(Image, null=True, blank=True, on_delete=models.CASCADE)
+    hide_from_members_until = models.DateTimeField(null=True, blank=True)
+    hide_from_public = models.BooleanField(default=False, null=True)
+    extra_viewers = models.ManyToManyField(Person)
     
     def extension(self):
         name, extension = os.path.splitext(self.file.name)
@@ -204,6 +208,15 @@ class Rule(models.Model):
     class Meta:
         ordering = ['description']
 
+class Awarder(models.Model):
+    id = models.AutoField(primary_key=True)
+    awarded_by = models.CharField(max_length=100, blank=True)
+    judge = models.BooleanField(default=False)
+    members = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.awarded_by
+
 class CompetitionType(models.Model):
     '''A Competition is a collection of images for a club Competition'''
     id = models.AutoField(primary_key=True)
@@ -211,7 +224,9 @@ class CompetitionType(models.Model):
     rules = models.ManyToManyField(Rule, blank=True)
     active = models.BooleanField(default=True)
     contributes_to_annual = models.BooleanField(default=True)
-    selection_not_places = models.BooleanField(default=False)
+    selection_not_places = models.BooleanField(default=False) 
+    awarders = models.ManyToManyField(Awarder)
+    rank = models.PositiveSmallIntegerField(default=0)
     
     def __str__(self):
         return self.type
@@ -254,15 +269,6 @@ class Competition(models.Model):
     class Meta:
         ordering = ["-event__starts", "type__type"]
         
-class Awarder(models.Model):
-    id = models.AutoField(primary_key=True)
-    awarded_by = models.CharField(max_length=100, blank=True)
-    judge = models.BooleanField(default=False)
-    members = models.BooleanField(default=True)
-    
-    def __str__(self):
-        return self.awarded_by
-    
 class AwardType(models.Model):
     '''A list of all the awards and what they are worth in terms of points
     If the points change create a new award and make the old one not active.
@@ -292,14 +298,21 @@ class Award(models.Model):
         return self.image.author.firstname + " " + self.image.author.surname + " was awarded a " + self.type.name + " " + self.type.awarded_by.awarded_by + " for '" +  self.image.title + "'"
 
 class Gallery(models.Model):
-    '''A Gallery is a collection of images which isn't a club competition'''
+    '''A Gallery is a collection of images which isn't a club competition
+    Can be used to select images for external / inter-club comps.
+    Make event the gallery is in member only, Have gallery for upload and one for selected images,
+    add images to Event for external competition when entered.
+    Multi_upload is for a committee member to dump a bunch of images into a gallery,
+    title set to filename, when false upload one image at a time with a title (for member upload)'''
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     images = models.ManyToManyField(Image, related_name='galleries')
     event = models.ForeignKey(Event, null=True, on_delete=models.PROTECT)
+    private = models.BooleanField(default=False)
     public_after = models.DateTimeField(null=True)
     member_upload_from = models.DateTimeField(null=True)
     member_upload_until = models.DateTimeField(null=True)
+    multi_upload = models.BooleanField(default=False)
     
     def __str__(self):
         return self.name

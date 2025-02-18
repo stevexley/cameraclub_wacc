@@ -18,6 +18,7 @@ from django.db.models import Sum, Max, Min
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
     Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter
 from .forms import *
+from .utils import pick_a_pic
 from datetime import datetime, timedelta
 import subprocess
 import calendar
@@ -178,6 +179,13 @@ class EventsView(YearArchiveView):
         for event in events:
             month = event.starts.strftime('%B')
             events_by_month[month].append(event)
+            if not event.image:
+                if event.competition_set.all:
+                    img_id = pick_a_pic(event.id)
+                    if img_id:
+                        image = Image.objects.get(id = img_id)
+                        event.image = image
+                        event.save()
         context['events_by_month'] = dict(events_by_month)
         context['months'] = list(calendar.month_name)[1:]
         return context
@@ -215,12 +223,17 @@ class EventDetailView(DetailView):
         context['user'] = self.request.user
         context['judge_awards'] = []
         context['member_awards'] = []
+        context['images'] = []
+        user_images = Image.objects.none()
 
         # if no comps don't try to count votes or get awards
         images = Image.objects.filter(competitions__in = context['comps'])
         if not images:
             return context
         for comp in context['comps']:
+            user_images = Image.objects.filter(author = self.request.user.person,
+                                                                        competitions = comp
+                                                                        ) | user_images
             comp_member_awards = None
             comp_member_awards = Award.objects.filter(competition__id = comp.id,
                                                             type__awarded_by__members = True
@@ -252,8 +265,20 @@ class EventDetailView(DetailView):
                 context['judge_awards'] = context['judge_awards'] | comp_judge_awards
             else:
                 context['judge_awards'] = comp_judge_awards
+        if user_images:
+            context['user_images'] = user_images
+        for comp in context['comps']:
+            comp.has_entries = any(img.competitions.filter(id=comp.id).exists() for img in user_images)
+            print("Has Entries: " + str(comp) + " " + str(comp.has_entries))
         return context
-    
+
+def remove_entry(request, comp_id, img_id):
+    comp = Competition.objects.get(id=comp_id)
+    image = Image.objects.get(id=img_id)
+    comp.images.remove(image)
+    url = reverse('event', kwargs={'pk': comp.event.id })
+    return redirect(url)
+
 class UploadEventFileView(PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
     """This is the view for uploading a file to an event.
     """
@@ -416,7 +441,6 @@ class EnterCompetitionView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = Image  
     form_class = ImageForm
     template_name = 'main/image_upload_form.html'
-    success_url = '/events/' + str(datetime.now().year) + '/#today_bookmark'
     success_message = "Entry Uploaded"
 
     def get_initial(self):
@@ -446,6 +470,11 @@ class EnterCompetitionView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['competition'] = Competition.objects.get(id=self.kwargs['pk'])
         return context
+    
+    def get_success_url(self):
+        """Dynamically generate the success URL based on the event ID."""
+        competition = Competition.objects.get(id=self.kwargs['pk'])
+        return reverse('event', kwargs={'pk': competition.event.id})
 
 class ViewEntriesView(LoginRequiredMixin, TemplateView):
     login_url = "accounts/login/"
@@ -553,10 +582,11 @@ def count_votes(competition):
     image_points = {}
     for image in images:
         total_points = image.vote_set.aggregate(total_points=Sum('vote__points'))['total_points']
+        three_point_count = image.vote_set.filter(vote__points=3).count()
         image_points[image] = total_points or 0
     
-    # Sort images based on total points in descending order
-    sorted_images = sorted(image_points.items(), key=lambda x: x[1], reverse=True)
+    # Sort images based on total points and 3 point count in descending order
+    sorted_images = sorted(image_points.items(), key=lambda x: (x[1][0], x[1][1]), reverse=True)
     
     # Initialize variables to keep track of positions and tied counts
     positions = {}
@@ -565,18 +595,19 @@ def count_votes(competition):
     previous_votes = None
        
     # Iterate through sorted items to assign positions
-    for index, (image, votes) in enumerate(sorted_images):
-        if votes > 0:
-            if votes != previous_votes:
-                # If the current number of votes is different from the previous one,
+    for index, (image, scores) in enumerate(sorted_images):
+        total_points, three_point_count = scores
+        if total_points > 0:
+            if scores != previous_scores:
+                # If the current scores are different from the previous one,
                 # update the current position and reset tied count
                 current_position += tied_count
                 tied_count = 0
             if current_position <= 6:
-                # Assign position to the person
+                # Assign position to the image
                 positions[image] = current_position
             tied_count += 1
-            previous_votes = votes
+            previous_scores = scores
                 
         # Assign awards to the top 6 scoring images
         # Create an Award instance for the images with positions
@@ -1003,17 +1034,14 @@ class AnnualTotalsView(PermissionRequiredMixin, ListView):
                     competition__type__contributes_to_annual=True,
                     competition__event__starts__year=year
                 ).aggregate(total_points=Sum('type__points'))['total_points'] or 0
-                if member.id == 136:
-                    print('Susi award points: ' + comp_type.type + ' ' + str(award_points) )
         
                 entry_points = Image.objects.filter(
                     author=member,
                     competitions__type=comp_type,
                     competitions__type__contributes_to_annual=True,
-                    competitions__event__starts__year=year
+                    competitions__event__starts__year=year,
+                    competitions__event__starts__lt = timezone.now()
                 ).count()
-                if member.id == 136:
-                    print('Susi image points: ' + comp_type.type + ' ' + str(entry_points) )
         
                 member_points[comp_type.type] = award_points + entry_points
         
@@ -1024,17 +1052,14 @@ class AnnualTotalsView(PermissionRequiredMixin, ListView):
                     competition__type__contributes_to_annual=True,
                     competition__event__starts__year=year
                 ).aggregate(total_points=Sum('type__points'))['total_points'] or 0
-                if member.id == 136:
-                    print('Susi combined awards points: ' + keyword + ' ' + str(combined_award_points) )
         
                 combined_entry_points = Image.objects.filter(
                     author=member,
                     competitions__type__type__icontains=keyword,
                     competitions__type__contributes_to_annual=True,
-                    competitions__event__starts__year=year
+                    competitions__event__starts__year=year,
+                    competitions__event__starts__lt = timezone.now()
                 ).count()
-                if member.id == 136:
-                    print('Susi combined entry points: ' + keyword + ' ' + str(combined_entry_points) )
         
                 combined_award_totals[display_name] = combined_award_points + combined_entry_points
         

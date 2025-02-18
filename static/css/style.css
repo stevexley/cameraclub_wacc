@@ -216,9 +216,14 @@
 
 .picframe {
     float: left;
-    height: 120px;
+    width: 146px;
+    height: auto;
     margin-bottom: 4px;
     margin-right: 4px;
+}
+
+.smallcard {
+    width: 150px;
 }
 
 .modal-dialog {
