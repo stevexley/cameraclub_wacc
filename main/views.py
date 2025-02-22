@@ -231,9 +231,12 @@ class EventDetailView(DetailView):
         if not images:
             return context
         for comp in context['comps']:
-            user_images = Image.objects.filter(author = self.request.user.person,
+            try:
+                user_images = Image.objects.filter(author = self.request.user.person,
                                                                         competitions = comp
                                                                         ) | user_images
+            except:
+                pass
             comp_member_awards = None
             comp_member_awards = Award.objects.filter(competition__id = comp.id,
                                                             type__awarded_by__members = True
