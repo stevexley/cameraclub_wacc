@@ -14,8 +14,19 @@ admin.site.register(Person)
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    list_display = [ "person", "joined", "current" ]
+    list_display = [ "person", "joined", "current", "get_email", "get_mobile" ]
     list_filter = [ "current" ]
+
+    @admin.display(description='Phone Number')
+    def get_mobile(self, obj):
+        return obj.person.mobile
+    
+    @admin.display(description='Email Address')
+    def get_email(self, obj):
+        try:
+            return obj.person.user.email
+        except:
+            return
 
 @admin.register(Position)
 class PositionAdmin(admin.ModelAdmin):
@@ -39,12 +50,14 @@ class JudgeAdmin(admin.ModelAdmin):
      
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
-    search_fields = [ 'title' ]
+    search_fields = [ 'title', 'author__surname', 'id' ]
     date_hierarchy = 'competitions__event__starts'
-    list_display = [ 'title', 'print','author', 'photo']
+    list_display = [ 'id', 'title', 'print','author', 'photo']
+    ordering = ['-competitions__event__starts']
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
+    ordering = ['-starts']
     date_hierarchy = 'starts'
     list_display = [ "name", "starts", "ends" ]
 
@@ -61,7 +74,7 @@ class CompAdmin(admin.ModelAdmin):
     raw_id_fields = ['images']
     date_hierarchy = 'judging_closes'
     search_fields = [ 'subject__subject' ]
-    list_display = [ "__str__", "judging_closes" ]
+    list_display = [ "__str__", "judge", "open_for_entries", "entries_close", "open_for_judging", "judging_closes" ]
 
 admin.site.register(Awarder)    
 
