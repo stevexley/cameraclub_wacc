@@ -184,7 +184,7 @@ class Event(models.Model):
     image = models.ForeignKey(Image, null=True, blank=True, on_delete=models.CASCADE)
     hide_from_members_until = models.DateTimeField(null=True, blank=True)
     hide_from_public = models.BooleanField(default=False, null=True)
-    extra_viewers = models.ManyToManyField(Person)
+    extra_viewers = models.ManyToManyField(Person, blank=True)
     
     def extension(self):
         name, extension = os.path.splitext(self.file.name)

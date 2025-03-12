@@ -973,6 +973,7 @@ def add_member(request):
             new_person.save()
             new_member = mform.save(commit=False)
             new_member.person = new_person
+            new_member.joined = timezone.now()
             new_member.save()
         return HttpResponseRedirect(reverse_lazy('members'))
     else:
