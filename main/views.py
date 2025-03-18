@@ -250,17 +250,19 @@ class EventDetailView(DetailView):
                 '''check to make sure voting has closed.
                 If it has closed count the votes, create the awards and add them to the context'''
                 if timezone.make_naive(comp.judging_closes) < timezone.make_naive(timezone.now()):
-                    try:
-                        count_votes(comp)
-                        comp_member_awards = Award.objects.filter(competition__id = comp.id,
-                                                            type__awarded_by__members = True
-                                                            ).order_by('-type__points')
-                        if context['member_awards']:
-                            context['member_awards'] = context['member_awards'] | comp_member_awards
-                        else:
-                            context['member_awards'] = comp_member_awards
-                    except:
-                        pass            
+                    print("Before try")
+                    # try:
+                    count_votes(comp)
+                    comp_member_awards = Award.objects.filter(competition__id = comp.id,
+                                                        type__awarded_by__members = True
+                                                        ).order_by('-type__points')
+                    
+                    if context['member_awards']:
+                        context['member_awards'] = context['member_awards'] | comp_member_awards
+                    else:
+                        context['member_awards'] = comp_member_awards
+                    # except:
+                    #     pass            
             comp_judge_awards = Award.objects.filter(competition__id = comp.id,
                                                             type__awarded_by__judge = True
                                                             ).order_by('-type__points')
@@ -584,9 +586,9 @@ def count_votes(competition):
     # Calculate total points for each image in the competition
     image_points = {}
     for image in images:
-        total_points = image.vote_set.aggregate(total_points=Sum('vote__points'))['total_points']
-        three_point_count = image.vote_set.filter(vote__points=3).count()
-        image_points[image] = total_points or 0
+        total_points = image.vote_set.aggregate(total_points=Sum('vote__points'))['total_points'] or 0
+        three_point_count = image.vote_set.filter(vote__points=3).count() or 0
+        image_points[image] = (total_points, three_point_count)
     
     # Sort images based on total points and 3 point count in descending order
     sorted_images = sorted(image_points.items(), key=lambda x: (x[1][0], x[1][1]), reverse=True)
@@ -596,6 +598,7 @@ def count_votes(competition):
     current_position = 1
     tied_count = 0
     previous_votes = None
+    previous_scores = 0
        
     # Iterate through sorted items to assign positions
     for index, (image, scores) in enumerate(sorted_images):
