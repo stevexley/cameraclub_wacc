@@ -3,5 +3,6 @@
 /cameraclub/__pycache__
 /main/__pycache__
 /main/*/__pycache__
+/main/migrations
 /import.log
 /staticfiles
