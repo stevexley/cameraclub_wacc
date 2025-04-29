@@ -9,7 +9,7 @@ from PIL import Image
 from nltk.corpus import stopwords
 from itertools import chain
 from datetime import datetime, timedelta
-from .models import Event, Competition, CompetitionType, Award, Image, Rule
+from .models import Event, Competition, CompetitionType, Award, Image, Rule, Gallery
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import HttpResponse, FileResponse
 from django.contrib import messages
@@ -301,6 +301,25 @@ def cleanup_photos(request):
 def zip_comp_images(request, comp_pk):
     comp = Competition.objects.get(id=comp_pk)
     images = Image.objects.filter(competitions=comp, photo__isnull=False).distinct()
+
+    zip_buffer = io.BytesIO()
+    zipname = f"WACC_download_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+
+    with ZipFile(zip_buffer, 'w') as myzip:
+        for image in images:
+            imagefile = os.path.join(settings.MEDIA_ROOT, str(image.photo))
+            # Slugify for safe filenames
+            newname = f"{slugify(image.author.firstname)}-{slugify(image.author.surname)}_{slugify(image.title)}.jpg"
+            myzip.write(imagefile, newname)
+
+    zip_buffer.seek(0)  # Go to the beginning of the BytesIO object
+
+    response = FileResponse(zip_buffer, as_attachment=True, filename=zipname)
+    return response
+
+def zip_gallery(request, gallery_pk):
+    gallery = Gallery.objects.get(id=gallery_pk)
+    images = Image.objects.filter(galleries=gallery, photo__isnull=False).distinct()
 
     zip_buffer = io.BytesIO()
     zipname = f"WACC_download_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"

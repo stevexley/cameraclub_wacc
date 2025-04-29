@@ -5,9 +5,11 @@
         <table class="table">
             {% for user in committee %}
                 <tr>
-                    {% if user.person.position_set.first %}
+                    {% if user.person.position.all %}
                         <td>
-                            {{ user.person.position_set.first }}
+                            {% for pos in user.person.position.all %}
+                                {{ pos }}
+                            {% endfor %}
                         </div>
                     {% else %}
                         <td></td>

@@ -1,0 +1,85 @@
+{% extends 'main/base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<h1>{{ in_gallery }}</h1>
+
+<p>Below are the images in this gallery and a list of other galleries from this year</p>
+<p>Select the gallery you wish to copy some of the images to and the images you wish to copy</p>
+
+
+<!-- Form Starts -->
+<form method="post">
+    {% csrf_token %}
+
+    <!-- Display general form (non-field) errors here -->
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+
+
+    <!-- Start of the table -->
+    <table class="table w-auto">
+        <tr>
+            <td colspan="3">
+            {% for field in form %}
+            {% if field.name == "out_gallery" %}
+            {% render_field field class="form-control" %}
+            {% endif %}
+            {% endfor %}
+            </td>
+        </tr>
+        {% for image in images.all %}
+            <tr>
+                <td>
+                    <!-- The actual checkbox -->
+                    <input style="width: 25px; height: 25px;" type="checkbox" class="form-check-input" id="image_{{ image.id }}" name="{{ form.images.name }}" value="{{ image.id }}" {% if image.id in selected_image_ids %}checked{% endif %}>
+          
+                </td>
+                <td>
+                    <!-- Check if the image has a photo -->
+                    {% if image.photo %}
+                        <!-- Render the image if it exists -->
+                        <label for="image_{{ image.id }}">
+                            <img class="picframe" src="{{ image.photo.url }}" alt="Image {{ image.title }}">
+                        </label>
+                    {% else %}
+                        <!-- Render a placeholder if no photo exists -->
+                        <label for="image_{{ image.id }}">
+                            <p>No image available</p>
+                        </label>
+                    {% endif %}
+                </td>
+                <td>
+                    <h5>{{ image.title }} by {{ image.author }}</h5>
+                </td>
+            </tr>
+        {% endfor %}
+        
+        <!-- Field-specific errors for the "images" field -->
+        {% if form.images.errors %}
+            <tr>
+                <td colspan="3">
+                    <div class="alert alert-danger">
+                        {% for error in form.images.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </td>
+            </tr>
+        {% endif %}
+
+        <tr>
+            <td colspan="3">
+                <button class="btn btn-block btn-primary" type="submit">Copy Selected Images</button>
+            </td>
+        </tr>
+    </table>
+</form>
+
+{% endblock content %}

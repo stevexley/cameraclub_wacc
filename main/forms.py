@@ -4,7 +4,7 @@ from django import forms
 from django.forms import formset_factory, BaseFormSet, BaseInlineFormSet, inlineformset_factory
 from django.forms.widgets import SplitDateTimeWidget
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from .models import Image, Competition, Subject, CompetitionType, Judge, Event, Award, AwardType, Person, User, Member
+from .models import Image, Competition, Subject, CompetitionType, Judge, Event, Award, AwardType, Person, User, Member, Gallery
 from .utils import setTitleCase, checkWidth, checkHeight, checkOneEntry, checkMono
 
 # class EventUploadForm(forms.ModelForm):
@@ -58,6 +58,7 @@ class ImageForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         source_view = kwargs.pop('source_view', None)
+        gallery = kwargs.pop('gallery', None)
         pk = kwargs.pop('pk', None)
         super().__init__(*args, **kwargs)
         if source_view ==  'enter_competition':
@@ -74,9 +75,12 @@ class ImageForm(forms.ModelForm):
         self.fields['photo'].widget.attrs['id'] = 'fileInput'
         self.fields['author'].empty_label = '-Select Author-'
         if pk:
-            competition = Competition.objects.get(id=pk)
-            if "print" in competition.type.type.lower():
-                self.fields['print'].initial = True
+            if gallery:
+                gallery = Gallery.objects.get(id = pk)
+            else:
+                competition = Competition.objects.get(id=pk)
+                if "print" in competition.type.type.lower():
+                    self.fields['print'].initial = True
         if author_fixed:
             self.fields['author'].widget = forms.HiddenInput()
         else:
@@ -96,7 +100,6 @@ class ImageForm(forms.ModelForm):
             competition = self.initial['competition']
             if photo:
                 for rule in competition.type.rules.all():
-                    print(rule.rule)
                     if '<= 1920px wide' in rule.rule:
                         if checkWidth(photo):
                             pass
@@ -298,4 +301,38 @@ class EoyPrintSelectionForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields['images'].queryset = user_images
         self.competition = competition
+        self.user = user
+
+class GalleryAddForm(forms.ModelForm):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['extra_viewers'].queryset = Person.objects.filter(member__current=True)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+            if any(word in visible.name for word in ["after", "until", "from"]):
+                visible.field.widget.input_type = 'datetime-local'
+            visible.field.widget.attrs['placeholder'] = visible.field.label
+            visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
+
+    class Meta:
+        model = Gallery
+        exclude = ['event', 'images']
+
+class GallerySelectionForm(forms.Form):
+    images = forms.ModelMultipleChoiceField(
+        queryset=Image.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+    out_gallery = forms.ModelChoiceField(
+        queryset=Gallery.objects.none(),
+        required=True,
+        label="Destination Gallery"
+    )
+ 
+    def __init__(self, user=None, images=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['images'].queryset = images
+        self.fields['out_gallery'].queryset = Gallery.objects.filter(event__starts__year__gte = datetime.now().year)
         self.user = user

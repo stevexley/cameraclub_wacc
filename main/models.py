@@ -1,5 +1,7 @@
 import os
-from datetime import datetime 
+from django.core.exceptions import ValidationError
+from datetime import timedelta
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_delete
@@ -35,7 +37,7 @@ def generate_thumbnail(pdf_path, thumb_path, size=(200, 300)):
 class Newsletter(models.Model):
     '''Club Newsletters (issued monthly)'''
     id = models.AutoField(primary_key=True)
-    issue_date = models.DateTimeField(default=datetime.now())
+    issue_date = models.DateTimeField(auto_now_add=True)
     file = models.FileField(upload_to='files/news/')
     thumb = models.ImageField(upload_to='files/news/thum', blank=True, null=True)
     
@@ -306,14 +308,39 @@ class Gallery(models.Model):
     title set to filename, when false upload one image at a time with a title (for member upload)'''
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    images = models.ManyToManyField(Image, related_name='galleries')
+    images = models.ManyToManyField(Image, related_name='galleries', blank=True)
     event = models.ForeignKey(Event, null=True, on_delete=models.PROTECT)
     private = models.BooleanField(default=False)
-    public_after = models.DateTimeField(null=True)
-    member_upload_from = models.DateTimeField(null=True)
-    member_upload_until = models.DateTimeField(null=True)
+    public_after = models.DateTimeField(null=True, blank=True)
+    member_upload_from = models.DateTimeField(null=True, blank=True)
+    member_upload_until = models.DateTimeField(null=True, blank=True)
     multi_upload = models.BooleanField(default=False)
+    extra_viewers = models.ManyToManyField(Person, blank=True)
     
+    def clean(self):
+        super().clean()
+
+        if not self.private:
+            now = timezone.now()
+            # If it's not a private gallery set some default values for member view and upload dates
+            if not self.public_after:
+                # Default: public one week from now
+                self.public_after = now + timedelta(days=15)
+
+            if not self.member_upload_from:
+                # Default: member upload can start now
+                self.member_upload_from = now
+
+            if not self.member_upload_until:
+                # Default: uploads end in 2 weeks
+                self.member_upload_until = now + timedelta(days=14)
+
+            # Ensure logical consistency (start before end)
+            if self.member_upload_from >= self.member_upload_until:
+                raise ValidationError({
+                    'member_upload_until': 'Member upload until must be after member upload from.'
+                })
+
     def __str__(self):
         return self.name
     

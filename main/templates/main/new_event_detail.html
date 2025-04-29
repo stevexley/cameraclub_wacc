@@ -7,6 +7,24 @@
             <h1>{{ event.name }}</h1>
             <h3>{{ event.starts.date }} {{ event.starts|time:"H:i" }} - {{ event.ends|time:"H:i" }}</h3>
             {% if event.description %}<p>{{ event.description }}</p>{% endif %}
+            <div class="mb-3">
+                {% if event.file %}
+                <div>
+                    {% if 'jpg' in event.extension %}
+                        <img class="img-thumbnail" src="{{ event.file.url }}" alt="Click to View">
+                    {% elif 'pdf' in event.extension %}
+                        <div id="pdf-viewer" class="embed-responsive"></div>
+                    {% elif 'docx' in event.extension %}
+                        <!-- Render a Word document icon or thumbnail image -->
+                    {% endif %}
+                </div>
+                {% if perms.main.change_event %}
+                <a class="btn btn-primary mt-1"
+                href="{% url 'event_add_file' event.id %}">Edit Event Details</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            
             {% if event.competition_set.all %}
                 <div>
                     {% if subject %}
@@ -167,52 +185,47 @@
                 </div>
             </div>
             {% else %}
-            {% if "ompetition" in event.name %}
-                <div>
-                    {% if event.competition_set.all %}
-                        <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add Competition</a>
-                    {% else %}
-                        <a class="btn btn-primary" href="{% url 'create_compnight' event.id %}">Setup Competition Night</a>
-                        <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add a Single Competition</a>
-                    {% endif %}
-                </div>
+                {% if "ompetition" in event.name %}
+                    <div>
+                        {% if event.competition_set.all %}
+                            <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add Competition</a>
+                        {% else %}
+                            <a class="btn btn-primary" href="{% url 'create_compnight' event.id %}">Setup Competition Night</a>
+                            <a class="btn btn-primary mt-1" href="{% url 'create_comp' event.id %}">Add a Single Competition</a>
+                        {% endif %}
+                    </div>
+                {% comment %} If not a competition night add button to add a Gallery to the Event {% endcomment %}
+                {% elif "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position %}
+                    <a class="btn btn-primary mb-2"
+                    href="{% url 'gallery_create' event.id %}">Add a gallery</a>
+                {% endif %}
             {% endif %}
-            {% endif %}
+            
+
             {% comment %} If the event has galleries and they are public, show them {% endcomment %}
             {% if event.gallery_set.all %}
                 {% for gallery in event.gallery_set.all %}
-                    <div>
-                        {% if gallery.public_after|date:"Y-m-d" < todays_date %}
-                            <h3>Images from {{ gallery.name }}</h3>
-                            {% comment %} if the gallery has any images uploaded {% endcomment %}
-                            <ul class="image-gallery">
-                                {% for image in gallery.images.all %}
-                                {% if image.photo %}
-                                    {% include "main/includes/gallery_items.html" %}
-                                {% endif %}
-                                {% endfor %}
-                            </ul>
+                    <div class='mb-2'>
+                        {% if gallery.public_after|date:"Y-m-d" < todays_date and gallery.private == False %}
+                            {% include "main/includes/gallery.html" %}
+                        {% elif "President" in user.person.position.first.position or "Competition" in user.person.position.first.position or "Webmaster" in user.person.position.first.position %}
+                            {% include "main/includes/gallery.html" %}
+                            <a class="btn btn-primary mt-1" href="{% url 'gallery-zip' gallery.id %}">Download Zip</a>
+                            <a class="btn btn-primary mt-1" href="{% url 'copy_to_gallery' gallery.id %}">Copy Images to Another Gallery</a>
+                        {% elif user.person in gallery.extra_viewers %}
+                            {% include "main/includes/gallery.html" %}
+                            <a class="btn btn-primary mt-1" href="{% url 'gallery-zip' gallery.id %}">Download Zip</a>
+                            <a class="btn btn-primary mt-1" href="{% url 'copy_to_gallery' gallery.id %}">Copy Images to Another Gallery</a>
                         {% endif %}
                         {% if gallery.member_upload_from|date:"Y-m-d" <= todays_date %}
                             {% if gallery.member_upload_until|date:"Y-m-d" >= todays_date %}
-                                <a class="btn btn-primary" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
+                                <a class="btn btn-outline-primary mt-1" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
+                            {% elif "President" in user.person.position.first.position or "Competition" in user.person.position.first.position or "Webmaster" in user.person.position.first.position %}
+                                <a class="btn btn-primary mt-1" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
                             {% endif %}
                         {% endif %}
                     </div>
                 {% endfor %}
-            {% endif %}
-            {% if event.file %}
-                {% if 'jpg' in event.extension %}
-                    <img class="img-thumbnail" src="{{ event.file.url }}" alt="Click to View">
-                {% elif 'pdf' in event.extension %}
-                    <div id="pdf-viewer" class="embed-responsive"></div>
-                {% elif 'docx' in event.extension %}
-                    <!-- Render a Word document icon or thumbnail image -->
-                {% endif %}
-            {% endif %}
-            {% if perms.main.change_event %}
-                <a class="btn btn-primary mt-1"
-                href="{% url 'event_add_file' event.id %}">Edit Event Details</a>
             {% endif %}
         </div>
     </div>

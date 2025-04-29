@@ -1,0 +1,94 @@
+{% extends "main/base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="col-10">
+        <form action="" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h2>Enter Image for {{ gallery }}</h2>
+        
+        {% if perms.main.change_competition %}
+        <div class="my-4">
+          <a class="btn btn-primary btn-block mt-4"
+             href="{% url 'add_to_gallery' gallery.id %}">Add Multiple Images to Gallery</a>
+        </div>  
+        {% endif %}
+
+        {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+        {% for field in form.visible_fields %}
+          <div class="mb-3">
+            {% comment %} {% if field.name == 'print' %}
+            <label class="form-check-label mr-5">{{ field.label }}</label>
+            {% endif %} {% endcomment %}
+            {% if field.errors %}
+                <div class="form-control is-invalid">
+                    {{ field }}
+                </div>
+                <div id="{{ field.name }}Feedback" class="invalid-feedback">
+                    {{ field.errors }}
+                </div>
+            {% elif field.name == "print" %}
+            {% else %}
+                {{ field }}
+            {% endif %}
+            {% if field.name == 'title' %}
+            <div id="titleHelp" class="form-text">The title will be auto-capitalised for display.</div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        <input class="btn btn-outline-primary" type="submit" value="Submit" />
+        <div id="previewArea" class="row mt-1">
+          <!-- Image previews will be appended here -->
+        </div>
+        
+        </form>
+
+        
+    </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const fileInput = document.getElementById("fileInput");
+    const previewArea = document.getElementById("previewArea");
+
+    fileInput.addEventListener("change", function(event) {
+        const files = event.target.files;
+        previewArea.innerHTML = ""; // Clear previous previews
+
+        if (files.length === 0) {
+            const p = document.createElement("p");
+            p.textContent = "No files selected!";
+            previewArea.appendChild(p);
+            return;
+        }
+
+        for (const file of files) {
+            if (file && file.type.startsWith("image/")) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.classList.add("img-thumbnail");
+                    img.style.maxWidth = "150px";
+                    img.style.marginRight = "10px";
+                    
+                    const div = document.createElement("div");
+                    div.classList.add("col-md-3");
+                    div.appendChild(img);
+
+                    previewArea.appendChild(div);
+                };
+
+                reader.readAsDataURL(file);
+            }
+        }
+    });
+});
+</script>
+{% endblock scripts %}

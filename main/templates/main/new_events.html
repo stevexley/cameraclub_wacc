@@ -72,13 +72,13 @@
                                     {% elif comp.type.type == "Set Digital" %}
                                         <li class="list-group-item">Set Subject: {{ comp.subject }}</li>
                                         {% if comp.open_for_entries|date:"Y-m-d H:i" > right_now  %}
-                                            <li class="list-group-item">Digital Entries Open {{ comp.open_for_entries|date:"M jS" }} at {{ comp.open_for_entries|date:"g:i" }}</li>
+                                            <li class="list-group-item">Digital Entries Open {{ comp.open_for_entries|date:"M jS" }} at {{ comp.open_for_entries|date:"g:i A" }}</li>
                                         {% elif comp.entries_close|date:"Y-m-d H:i" > right_now  %}
-                                            <li class="list-group-item">Digital Entries Close {{ comp.entries_close|date:"jS" }} at {{ comp.entries_close|date:"g:i" }}</li>
+                                            <li class="list-group-item">Digital Entries Close {{ comp.entries_close|date:"jS" }} at {{ comp.entries_close|date:"g:i A" }}</li>
                                         {% elif comp.open_for_juding|date:"Y-m-d H:i" > right_now and comp.members_vote %}
-                                            <li class="list-group-item">Voting Starts {{ comp.open_for_judging|date:"jS" }} at {{ comp.open_for_judging|date:"g:i" }}</li>
+                                            <li class="list-group-item">Voting Starts {{ comp.open_for_judging|date:"jS" }} at {{ comp.open_for_judging|date:"g:i A" }}</li>
                                         {% elif comp.juding_closes|date:"Y-m-d H:i" > right_now and comp.members_vote %}
-                                            <li class="list-group-item">Voting Closes {{ comp.judging_closes|date:"jS" }} at {{ comp.judging_closes|date:"g:i" }}</li>
+                                            <li class="list-group-item">Voting Closes {{ comp.judging_closes|date:"jS" }} at {{ comp.judging_closes|date:"g:i A" }}</li>
                                         {% endif %}
                                     {% endif %}
                                     {% endfor %}

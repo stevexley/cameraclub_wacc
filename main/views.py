@@ -62,7 +62,7 @@ class MemberListView(PermissionRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['committee'] =  User.objects.filter(groups__name='Committee').order_by('person__position__order')     
+        context['committee'] = User.objects.filter(groups__name='Committee').order_by('person__position__order')     
         return context
     
 
@@ -578,6 +578,18 @@ class MemberVotingView(LoginRequiredMixin, View):
 def user_has_permission(user):
     return user.has_perm("main.change_competition")
 
+def user_gallery_permission(user, gallery_pk):
+    passes = False
+    gallery = Gallery.objects.get(id = gallery_pk)
+    posns = ''
+    for pos in user.person.position.all():
+        posns = posns + pos.position
+    if "President" in posns or "Competition" in posns or "Webmaster" in posns:
+        passes = True
+    if user.person in gallery.extra_viewers.all():
+        passes = True
+    return passes
+
 def count_votes(competition):
 
     # Get all the images for the given competition
@@ -677,11 +689,12 @@ class CompAwardsView(DetailView):
                                                         type__awarded_by__members = True
                                                         ).order_by('-type__points')
         '''if there are no member awards, count the votes and create the awards.'''
+
         if not context['member_awards']:
             '''check to make sure voting has closed.
             If it has closed count the votes, create the awards and add them to the context'''
             competition = context['competition']
-            if timezone.make_naive(competition.judging_closes) < timezone.make_naive(timezone.now()):
+            if competition.judging_closes < datetime.now(timezone.utc):
                 try:
                     count_votes(competition)
                     context['member_awards'] = Award.objects.filter(competition__id = self.kwargs['pk'],
@@ -743,6 +756,7 @@ class AddImagesToCompetitionView(FormMixin, ListView):
         kwargs = super().get_form_kwargs()
         kwargs['pk'] = self.kwargs.get('pk')
         kwargs['source_view'] = 'add_images'  # Indicate the source view
+        kwargs['gallery'] = False
         return kwargs
     
     def get_queryset(self):
@@ -925,6 +939,32 @@ class MemberAwardUpdateView(PermissionRequiredMixin, TemplateView):
             # If the formset is invalid, re-render the template with errors
             return self.render_to_response(self.get_context_data(formset=formset))
 
+class GalleryCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
+    '''The view to create an event gallery'''
+    login_url = "accounts/login/"
+    redirect_field_name = "/"
+    model = Gallery
+    form_class = GalleryAddForm
+    template_name = 'main/gallery_create_form.html'
+    success_message = "Gallery Added to Event"
+
+    def get_initial(self):
+        event = Event.objects.get(id=self.kwargs['pk'])
+        return {'event': event }
+    
+    def get_success_url(self):
+        # Redirect to the EventDetailView for the event associated with the gallery
+        return reverse_lazy('event', kwargs={'pk': self.kwargs['pk']})
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['event'] = Event.objects.get(id=self.kwargs['pk'])
+        return context
+    
+    def form_valid(self, form):
+        event = Event.objects.get(id=self.kwargs['pk'])
+        form.instance.event = event  # save the event to the gallery
+        return super().form_valid(form)
 
 class AddToGalleryView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     '''The view to upload to event galleries, similar to competition upload but without rules'''
@@ -932,35 +972,75 @@ class AddToGalleryView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     redirect_field_name = "/"
     model = Image  
     form_class = ImageForm
-    template_name = 'main/image_upload_form.html'
-    success_url = '/events/' + str(datetime.now().year) + '/#today_bookmark'
+    template_name = 'main/gallery_upload_form.html'
     success_message = "Image Uploaded to Gallery"
 
     def get_initial(self):
-        gallery = Gallery.objects.get(id=self.kwargs['gallery_id'])
+        gallery = Gallery.objects.get(id=self.kwargs['pk'])
         author = Person.objects.get(user=self.request.user)
         return {'gallery': gallery, 'author': author }
     
     def get_form_kwargs(self):
         kwargs = super(AddToGalleryView, self).get_form_kwargs()
-        kwargs.update({'gallery_id': self.kwargs['gallery_id']})  # to pass id to form
+        kwargs['pk'] = self.kwargs.get('pk')  # to pass id to form
+        kwargs['source_view'] = 'enter_competition'  # Indicate the source view
+        kwargs['gallery'] = True
         return kwargs
-
+    
+    def get_success_url(self):
+        # Redirect to the EventDetailView for the event associated with the gallery
+        event = Gallery.objects.get(id=self.kwargs['pk']).event
+        return reverse_lazy('event', kwargs={'pk': event.id })
+    
     # Validation of photo done in the form
     def form_valid(self, form):
         # Get gallery so we can add the image to it
-        gallery = Gallery.objects.get(id=self.kwargs['gallery_id'])
+        gallery = Gallery.objects.get(id=self.kwargs['pk'])
         image = form.save()
         image.galleries.add(gallery)
         return super().form_valid(form)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['gallery'] = Gallery.objects.get(id=self.kwargs['gallery_id'])
+        context['gallery'] = Gallery.objects.get(id=self.kwargs['pk'])
         return context
 
-'''View which combines 3 forms to add info to User, Person and Member models in one go'''
+@login_required
+def copy_to_gallery(request, in_gallery_pk):
+    # use custom test and pass gallery id to it to get extra_viewers
+    @user_passes_test(lambda user: user_gallery_permission(user, in_gallery_pk))
+    def inner_copy_to_gallery(request, in_gallery_pk):
+        # Get the images in current gallery
+        in_gallery = Gallery.objects.get(id = in_gallery_pk)
+        images = in_gallery.images
+        image_ids = images.values_list('id', flat=True)
+
+        if request.method == 'POST':
+            form = GallerySelectionForm(images=images, data=request.POST)
+            if form.is_valid():
+                selected_images = form.cleaned_data['images']
+                out_gallery = form.cleaned_data['out_gallery']
+               
+                # Add newly selected images
+                for image in selected_images:
+                    if image not in out_gallery.images.all():
+                        out_gallery.images.add(image)
+                messages.success(request, 'The images have been successfully added to teh gallery ' + out_gallery.name)
+                return redirect('event', in_gallery.event.id)
+        else:
+            form = GallerySelectionForm(images, initial={'images': images})
+
+        return render(request, 'main/select_gallery_images.html', {
+            'form': form,
+            'in_gallery': in_gallery,
+            'images': images,
+        })
+
+    return inner_copy_to_gallery(request, in_gallery_pk)
+
+
 def add_member(request):
+    '''View which combines 3 forms to add info to User, Person and Member models in one go'''
     if request.method == "POST":
         uform = UserForm(request.POST, instance=User())
         pform = PersonForm(request.POST, instance=Person())
