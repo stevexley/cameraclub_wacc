@@ -1,0 +1,55 @@
+{% load static %}
+<div class="card event-card">
+    <a href="{% url 'event' event.id %}" class="card-link">
+    <div class="image-container">
+        {% if event.image.photo %}
+        <img src="{{ event.image.photo.url }}" class="card-img-top" alt="{{ event.image.title }}">
+        {% elif event.file and 'jpg' in event.extension %}
+            <img class="img-thumbnail" src="{{ event.file.url }}" class="card-img-top" alt="Image related to event">
+        {% elif event.file and 'pdf' in event.extension %}
+            <div id="pdf-viewer" class="embed-responsive"></div>
+        {% else %}
+            {% if event.competition_set.all %}
+            {% for comp in event.competition_set.all %}
+            {% if comp.type.type == 'Open Colour Digital' %}
+                <img src="{% get_media_prefix %}{{ 'photos/Set_World of Colours_Stan Bendkowski.jpg' }}" class="card-img-top" alt="{{ event.image.title }}">
+            {% elif comp.type.type == 'Open Mono Digital' %}
+                <img src="{% get_media_prefix %}{{ 'photos/m_WAC_Jocelyn Manning_Checking Out.jpg' }}" class="card-img-top" alt="{{ event.image.title }}">
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+        {% endif %}
+        <div class="start-date">{{ event.starts|date:"j" }}</div>
+        <div class="event-name-overlay">
+            {{ event.name }}
+        </div>
+    </div>
+    {% if event.description %}
+    <div class="card-body">
+        <p class="card-text">{{ event.description|linebreaks }}</p>
+    </div>
+    {% endif %}
+    {% if event.competition_set.all %}
+    <ul class="list-group list-group-flush">
+        {% for comp in event.competition_set.all %}
+        {% if comp.type.type == 'Open Colour Digital' %}
+            <li class="list-group-item">{{ comp.subject }}</li>
+        {% elif comp.type.type == 'Open Mono Digital' %}
+            <li class="list-group-item">{{ comp.subject }}</li>
+        {% elif comp.type.type == "Set Digital" %}
+            <li class="list-group-item">Set Subject: {{ comp.subject }}</li>
+            {% if comp.open_for_entries|date:"Y-m-d H:i" > right_now  %}
+                <li class="list-group-item">Digital Entries Open {{ comp.open_for_entries|date:"M jS" }} at {{ comp.open_for_entries|date:"g:i A" }}</li>
+            {% elif comp.entries_close|date:"Y-m-d H:i" > right_now  %}
+                <li class="list-group-item">Digital Entries Close {{ comp.entries_close|date:"jS" }} at {{ comp.entries_close|date:"g:i A" }}</li>
+            {% elif comp.open_for_juding|date:"Y-m-d H:i" > right_now and comp.members_vote %}
+                <li class="list-group-item">Voting Starts {{ comp.open_for_judging|date:"jS" }} at {{ comp.open_for_judging|date:"g:i A" }}</li>
+            {% elif comp.juding_closes|date:"Y-m-d H:i" > right_now and comp.members_vote %}
+                <li class="list-group-item">Voting Closes {{ comp.judging_closes|date:"jS" }} at {{ comp.judging_closes|date:"g:i A" }}</li>
+            {% endif %}
+        {% endif %}
+        {% endfor %}
+      </ul>
+    {% endif %}
+</a>
+</div>
