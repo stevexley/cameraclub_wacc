@@ -31,11 +31,15 @@
                             {% if event.starts|date:"F" == todays_month %}
                             <span class="hidden" id="today_bookmark"></span>
                             {% endif %}
-                            {% if not event.hide_from_public or "President" in user.person.position.first.position or "Competition" in user.person.position.first.position%}
+                            {% if not event.hide_from_public%}
                                 {% include "main/includes/event_card.html" %}
                             {% elif user.is_authenticated and user.person.member.current %}
                                 {% if event.hide_from_members_until == None or event.hide_from_members_until <= today %}
                                     {% include "main/includes/event_card.html" %}
+                                {% elif "President" in user.person.position.first.position or "Competition" in user.person.position.first.position%}
+                                <div class="p-2" style="background-color: rgba(128, 128, 128, 0.5);" title="Hidden until {{ event.hide_from_members_until }}">
+                                    {% include "main/includes/event_card.html" %}
+                                </div>
                                 {% endif %}
                             {% endif%}
                         {% endfor %}
