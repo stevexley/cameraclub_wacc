@@ -219,7 +219,9 @@
                         {% endif %}
                         {% if gallery.member_upload_from|date:"Y-m-d" <= todays_date %}
                             {% if gallery.member_upload_until|date:"Y-m-d" >= todays_date %}
-                                <a class="btn btn-outline-primary mt-1" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
+                                {% if user.person.member.current %}
+                                    <a class="btn btn-outline-primary mt-1" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
+                                {% endif %}
                             {% elif "President" in user.person.position.first.position or "Competition" in user.person.position.first.position or "Webmaster" in user.person.position.first.position %}
                                 <a class="btn btn-primary mt-1" href="{% url 'add_to_gallery' gallery.id %}">Add Image to Gallery</a>
                             {% endif %}
