@@ -18,7 +18,7 @@ from django.db.models import Sum, Max, Min
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
     Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter
 from .forms import *
-from .utils import pick_a_pic
+from .utils import pick_a_pic, get_exif_data
 from datetime import datetime, timedelta
 import subprocess
 import calendar
@@ -274,7 +274,6 @@ class EventDetailView(DetailView):
             context['user_images'] = user_images
         for comp in context['comps']:
             comp.has_entries = any(img.competitions.filter(id=comp.id).exists() for img in user_images)
-            print("Has Entries: " + str(comp) + " " + str(comp.has_entries))
         return context
 
 def remove_entry(request, comp_id, img_id):
@@ -491,8 +490,21 @@ class ViewEntriesView(LoginRequiredMixin, TemplateView):
         context['competition'] = Competition.objects.get(id=self.kwargs['competition_id'])
         images = context['competition'].images.all()
         image_index = []
-        for image in images:
-            image_index.append(image.id)
+        posns = ""
+        for pos in self.request.user.person.position.all():
+            posns = posns + pos.position
+        if any(role in posns for role in ["President", "Competition", "Webmaster"]):
+            for img in images:
+                try:
+                    exif_data = get_exif_data(img.photo)
+                    img.dimensions = f"{img.photo.width}x{img.photo.height}" if img.photo else "Unknown"
+                    img.capture_date = exif_data.get('DateTimeOriginal', 'Unknown')
+                except Exception as e:
+                    img.dimensions = "Unknown"
+                    img.capture_date = "Unknown"
+        else:
+            for image in images:
+                image_index.append(image.id)    
         context['images'] = images
         context['image_index'] = image_index           
         return context

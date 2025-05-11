@@ -5,7 +5,8 @@ import cv2
 import os
 from zipfile import ZipFile
 import numpy as np
-from PIL import Image
+import PIL
+from PIL.ExifTags import TAGS
 from nltk.corpus import stopwords
 from itertools import chain
 from datetime import datetime, timedelta
@@ -115,6 +116,16 @@ def checkMono(photo, unique_colors_threshold=64):
     except Exception as e:
         print(f"Error: {e}")
         return False
+
+def get_exif_data(image_path):
+       img = PIL.Image.open(image_path)
+       exif_data = img._getexif()
+       exif = {}
+       if exif_data:
+           for tag, value in exif_data.items():
+               tag_name = TAGS.get(tag, tag)
+               exif[tag_name] = value
+       return exif
 
 # week_day is 0-6, 0=Monday
 def nth_weekday(temp, nth_week, week_day):
