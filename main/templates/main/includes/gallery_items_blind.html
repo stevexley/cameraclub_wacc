@@ -18,7 +18,7 @@
               <div class="m-1">
                   <div>
                       {% if current_pic > 1 %}
-                          {% with prev=forloop.counter|add:"-1" %}
+                            {% with prev=forloop.counter|add:"-1" %}
                               {% with prev_image_id=image_index|slice:prev|last %}
                                   <a id="prev-{{ image.id }}" class="btn btn-outline-primary" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ prev_image_id }}">Previous</a>
                               {% endwith %}

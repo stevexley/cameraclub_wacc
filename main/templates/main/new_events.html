@@ -7,7 +7,7 @@
                 <div class="col-2">
                     {% if previous_year %}
                         <a class="btn btn-outline-primary"
-                           href="{% url 'events' year=previous_year %}">{{ previous_year }}</a>
+                            href="{% url 'events' year=previous_year %}">{{ previous_year }}</a>
                     {% endif %}
                 </div>
                 <div class="col">
@@ -37,9 +37,7 @@
                                 {% if event.hide_from_members_until == None or event.hide_from_members_until <= today %}
                                     {% include "main/includes/event_card.html" %}
                                 {% elif "President" in user.person.position.first.position or "Competition" in user.person.position.first.position%}
-                                <div class="p-2" style="background-color: rgba(128, 128, 128, 0.5);" title="Hidden until {{ event.hide_from_members_until }}">
-                                    {% include "main/includes/event_card.html" %}
-                                </div>
+                                    {% include "main/includes/event_card_hidden.html" %}
                                 {% endif %}
                             {% endif%}
                         {% endfor %}
