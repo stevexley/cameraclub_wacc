@@ -6,7 +6,7 @@
   <!-- Link to trigger the modal -->
   <a class="divLink" href="#" data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}" 
   {% if "President" in user.person.position.first.position or "Competition" in user.person.position.first.position or "Webmaster" in user.person.position.first.position %}
-    title="{{image.title}} &#013; {{image.author}} &#013; {{ image.dimensions }} &#013; {{ image.capture_date }}">{% endif%}</a> 
+    title="{{image.title}} &#013; {{image.author}} &#013; {{ image.dimensions }} &#013; {{ image.capture_date }}"{% endif%}></a> 
 </li>
 <!-- Modal for the image -->
 <div class="modal fade" id="imageModal{{ image.id }}" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
