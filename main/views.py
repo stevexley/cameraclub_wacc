@@ -495,7 +495,7 @@ class ViewEntriesView(LoginRequiredMixin, TemplateView):
             posns = posns + pos.position
         if any(role in posns for role in ["President", "Competition", "Webmaster"]):
             for img in images:
-                image_index.append(image.id) 
+                image_index.append(img.id) 
                 try:
                     exif_data = get_exif_data(img.photo)
                     img.dimensions = f"{img.photo.width}x{img.photo.height}" if img.photo else "Unknown"
