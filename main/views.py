@@ -13,7 +13,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormMixin
 from django.views.generic import CreateView, UpdateView, TemplateView, FormView
 from django.forms import inlineformset_factory
-from django.db.models import Sum, Max, Min
+from django.db.models import Sum, Max, Min, OuterRef, Subquery
 
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
     Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter
@@ -79,9 +79,17 @@ class MainGalleryView(ListView):
     #annotate needed to prevent image duplicates
     #exclude image objects with no image file
     def get_queryset(self):
-        images = Image.objects.filter(photo__icontains = 'photo',
+        latest_judging = Award.objects.filter(
+        image=OuterRef('pk'),
+        competition__isnull=False
+        ).order_by('-competition__judging_closes').values('competition__judging_closes')[:1]
+
+        images = Image.objects.filter(
+            photo__icontains='photo',
             award__type__display_award=True
-        ).annotate(max_end=Max('award__competition__judging_closes')).order_by("-max_end")[:200]
+        ).annotate(
+            max_end=Subquery(latest_judging)
+        ).distinct().order_by('-max_end')[:200]
         
         return images
 
@@ -507,7 +515,8 @@ class ViewEntriesView(LoginRequiredMixin, TemplateView):
             for image in images:
                 image_index.append(image.id)    
         context['images'] = images
-        context['image_index'] = image_index           
+        context['image_index'] = image_index
+        context['voting'] = False         
         return context
     
 class ListEntriesView(LoginRequiredMixin, TemplateView):
@@ -550,6 +559,7 @@ class MemberVotingView(LoginRequiredMixin, View):
                 'image_index': image_index,
                 'vote_options': vote_options,
                 'voted_options': voted_options,
+                'voting': True
             }
             return render(request, 'main/member_voting.html', context)
         except Competition.DoesNotExist:
@@ -1020,25 +1030,54 @@ class AddToGalleryView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
 
 @login_required
 def copy_to_gallery(request, in_gallery_pk):
-    # use custom test and pass gallery id to it to get extra_viewers
     @user_passes_test(lambda user: user_gallery_permission(user, in_gallery_pk))
     def inner_copy_to_gallery(request, in_gallery_pk):
-        # Get the images in current gallery
-        in_gallery = Gallery.objects.get(id = in_gallery_pk)
-        images = in_gallery.images
-        image_ids = images.values_list('id', flat=True)
+        in_gallery = Gallery.objects.get(id=in_gallery_pk)
+        images = in_gallery.images.all()
 
         if request.method == 'POST':
             form = GallerySelectionForm(images=images, data=request.POST)
+            action = request.POST.get('action')
+
             if form.is_valid():
                 selected_images = form.cleaned_data['images']
-                out_gallery = form.cleaned_data['out_gallery']
-               
-                # Add newly selected images
-                for image in selected_images:
-                    if image not in out_gallery.images.all():
-                        out_gallery.images.add(image)
-                messages.success(request, 'The images have been successfully added to teh gallery ' + out_gallery.name)
+                try:
+                    out_gallery = form.cleaned_data.get('out_gallery')
+                except:
+                    out_gallery = None
+
+                if action == 'copy':
+                    if not out_gallery:
+                        messages.error(request, f'No gallery selected.')
+                        return render(request, 'main/select_gallery_images.html', {
+                            'form': form,
+                            'in_gallery': in_gallery,
+                            'images': images,
+                        })
+                    for image in selected_images:
+                        if image not in out_gallery.images.all():
+                            out_gallery.images.add(image)
+                    messages.success(request, f'Copied images to gallery "{out_gallery.name}".')
+
+                elif action == 'move':
+                    if not out_gallery:
+                        messages.error(request, f'No gallery selected.')
+                        return render(request, 'main/select_gallery_images.html', {
+                            'form': form,
+                            'in_gallery': in_gallery,
+                            'images': images,
+                        })
+                    for image in selected_images:
+                        if image not in out_gallery.images.all():
+                            out_gallery.images.add(image)
+                            in_gallery.images.remove(image)
+                    messages.success(request, f'Moved images to gallery "{out_gallery.name}".')
+
+                elif action == 'delete':
+                    for image in selected_images:
+                        in_gallery.images.remove(image)
+                    messages.success(request, 'Deleted selected images from the gallery.')
+                    
                 return redirect('event', in_gallery.event.id)
         else:
             form = GallerySelectionForm(images, initial={'images': images})

@@ -1,4 +1,8 @@
+{% if gallery.private == True %}
+<h3>{{ gallery.name }}</h3>
+{% else %}
 <h3>Images from {{ gallery.name }}</h3>
+{% endif %}
 {% comment %} if the gallery has any images uploaded {% endcomment %}
 <ul class="image-gallery">
     {% for image in gallery.images.all %}

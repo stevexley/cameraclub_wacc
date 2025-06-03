@@ -4,9 +4,7 @@
 {% block content %}
 <h1>{{ in_gallery }}</h1>
 
-<p>Below are the images in this gallery and a list of other galleries from this year</p>
-<p>Select the gallery you wish to copy some of the images to and the images you wish to copy</p>
-
+<p>Select the images you wish to copy, move or delete and the gallery you want to copy or move them to.</p>
 
 <!-- Form Starts -->
 <form method="post">
@@ -25,15 +23,6 @@
 
     <!-- Start of the table -->
     <table class="table w-auto">
-        <tr>
-            <td colspan="3">
-            {% for field in form %}
-            {% if field.name == "out_gallery" %}
-            {% render_field field class="form-control" %}
-            {% endif %}
-            {% endfor %}
-            </td>
-        </tr>
         {% for image in images.all %}
             <tr>
                 <td>
@@ -73,10 +62,24 @@
                 </td>
             </tr>
         {% endif %}
-
         <tr>
             <td colspan="3">
-                <button class="btn btn-block btn-primary" type="submit">Copy Selected Images</button>
+            {% for field in form %}
+            {% if field.name == "out_gallery" %}
+            {% render_field field class="form-control" %}
+            {% endif %}
+            {% endfor %}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button class="btn btn-primary" type="submit" name="action" value="copy">Copy Selected Images</button>
+            </td>
+            <td>
+                <button class="btn btn-warning" type="submit" name="action" value="move">Move Selected Images</button>
+            </td>
+            <td>
+                <button class="btn btn-danger" type="submit" name="action" value="delete">Delete Selected Images</button>
             </td>
         </tr>
     </table>

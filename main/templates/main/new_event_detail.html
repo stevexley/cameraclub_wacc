@@ -11,7 +11,7 @@
                 {% if event.file %}
                 <div>
                     {% if 'jpg' in event.extension %}
-                        <img class="img-thumbnail" src="{{ event.file.url }}" alt="Click to View">
+                        <img class="img-thumbnail" src="{{ event.file.url }}">
                     {% elif 'pdf' in event.extension %}
                         <div id="pdf-viewer" class="embed-responsive"></div>
                     {% elif 'docx' in event.extension %}
@@ -205,17 +205,17 @@
             {% comment %} If the event has galleries and they are public, show them {% endcomment %}
             {% if event.gallery_set.all %}
                 {% for gallery in event.gallery_set.all %}
-                    <div class='mb-2'>
+                    <div class='mb-2 p-1 border rounded'>
                         {% if gallery.public_after|date:"Y-m-d" < todays_date and gallery.private == False %}
                             {% include "main/includes/gallery.html" %}
                         {% elif "President" in user.person.position.first.position or "Competition" in user.person.position.first.position or "Webmaster" in user.person.position.first.position %}
                             {% include "main/includes/gallery.html" %}
                             <a class="btn btn-primary mt-1" href="{% url 'gallery-zip' gallery.id %}">Download Zip</a>
-                            <a class="btn btn-primary mt-1" href="{% url 'copy_to_gallery' gallery.id %}">Copy Images to Another Gallery</a>
+                            <a class="btn btn-primary mt-1" href="{% url 'copy_to_gallery' gallery.id %}">Edit Gallery Images</a>
                         {% elif user.person in gallery.extra_viewers %}
                             {% include "main/includes/gallery.html" %}
                             <a class="btn btn-primary mt-1" href="{% url 'gallery-zip' gallery.id %}">Download Zip</a>
-                            <a class="btn btn-primary mt-1" href="{% url 'copy_to_gallery' gallery.id %}">Copy Images to Another Gallery</a>
+                            <a class="btn btn-primary mt-1" href="{% url 'copy_to_gallery' gallery.id %}">Edit Gallery Images</a>
                         {% endif %}
                         {% if gallery.member_upload_from|date:"Y-m-d" <= todays_date %}
                             {% if gallery.member_upload_until|date:"Y-m-d" >= todays_date %}

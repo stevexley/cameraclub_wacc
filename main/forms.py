@@ -327,7 +327,7 @@ class GallerySelectionForm(forms.Form):
     )
     out_gallery = forms.ModelChoiceField(
         queryset=Gallery.objects.none(),
-        required=True,
+        required=False,
         label="Destination Gallery"
     )
  
