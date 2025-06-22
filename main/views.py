@@ -229,14 +229,21 @@ class EventDetailView(DetailView):
                                                     competition__type__type__contains = 'Set Digital').first()
         context['judge'] = Judge.objects.filter(competition__event = context['object']).first()
         context['user'] = self.request.user
+        context['galleries'] = Gallery.objects.filter(event = context['object'])
         context['judge_awards'] = []
         context['member_awards'] = []
-        context['images'] = []
+        context['comp_images'] = []
         user_images = Image.objects.none()
 
+        # get gallery images by gallery and sort by author
+        context['gallery_images_by_gallery'] = {
+            gallery: Image.objects.filter(galleries=gallery).order_by('author')
+            for gallery in context['galleries']
+        }
+
         # if no comps don't try to count votes or get awards
-        images = Image.objects.filter(competitions__in = context['comps'])
-        if not images:
+        comp_images = Image.objects.filter(competitions__in = context['comps'])
+        if not comp_images:
             return context
         for comp in context['comps']:
             try:
@@ -282,6 +289,7 @@ class EventDetailView(DetailView):
             context['user_images'] = user_images
         for comp in context['comps']:
             comp.has_entries = any(img.competitions.filter(id=comp.id).exists() for img in user_images)
+        
         return context
 
 def remove_entry(request, comp_id, img_id):
@@ -1033,7 +1041,7 @@ def copy_to_gallery(request, in_gallery_pk):
     @user_passes_test(lambda user: user_gallery_permission(user, in_gallery_pk))
     def inner_copy_to_gallery(request, in_gallery_pk):
         in_gallery = Gallery.objects.get(id=in_gallery_pk)
-        images = in_gallery.images.all()
+        images = in_gallery.images.all().order_by('author')
 
         if request.method == 'POST':
             form = GallerySelectionForm(images=images, data=request.POST)

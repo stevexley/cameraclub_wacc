@@ -5,7 +5,7 @@
 {% endif %}
 {% comment %} if the gallery has any images uploaded {% endcomment %}
 <ul class="image-gallery">
-    {% for image in gallery.images.all %}
+    {% for image in images %}
     {% if image.photo %}
         {% include "main/includes/gallery_items.html" %}
     {% endif %}
