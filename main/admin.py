@@ -94,6 +94,11 @@ class GalleryAdmin(admin.ModelAdmin):
 
 admin.site.register(ImageCompetitionComment)
 admin.site.register(VoteOption)
+admin.site.register(ResourceGroup)
+
+@admin.register(Resource)
+class ResourceAdmin(admin.ModelAdmin):
+    list_display = [ "__str__", "group", "visibility"]
 
 @admin.register(Vote)
 class VoteAdmin(admin.ModelAdmin):

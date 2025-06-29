@@ -1,0 +1,81 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container">
+<div class="col">
+    
+    {% if public_resources.all %}
+    <div class="mb-3">
+        <h2>Public Resources</h2>
+        <ul class="list-group">
+        {% for res in public_resources %}
+            {% if res.group.order == 1 %}
+            <li class="list-group-item" title="{{ res.description|safe }}">
+            <a href="{% url 'download_resource' res.id %}" >{{ res.name }}</a>
+            </li>
+            {% else %}
+            <li class="list-group-item" title="{{ res.description|safe }}">
+                {{ res.group.description}} - <a href="{% url 'download_resource' res.id %}" >{{ res.name }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% if member_resources.all and member == True %}
+    <div class="mb-3">
+        <h2>Member Resources</h2>
+        <ul class="list-group">
+        {% for res in member_resources %}
+            {% if res.group.order == 1 %}
+            <li class="list-group-item" title="{{ res.description|safe }}">
+            <a href="{% url 'download_resource' res.id %}" >{{ res.name }}</a>
+            </li>
+            {% else %}
+            <li class="list-group-item" title="{{ res.description|safe }}">
+                {{ res.group.description }} - <a href="{% url 'download_resource' res.id %}" >{{ res.name }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% if committee_resources.all %}
+    <div class="mb-3">
+        <h2>Committee Resources</h2>
+        <ul class="list-group">
+        {% for res in committee_resources %}
+            {% if res.group.order == 1 %}
+            <li class="list-group-item" title="{{ res.description|safe }}">
+            <a href="{% url 'download_resource' res.id %}" >{{ res.name }}</a>
+            </li>
+            {% else %}
+            <li class="list-group-item" title="{{ res.description|safe }}">
+                {{ res.group.description}} - <a href="{% url 'download_resource' res.id %}" >{{ res.name }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% if position_resources.all %}
+    <div class="mb-3">
+        <h2>Position Related Resources</h2>
+        <ul class="list-group">
+        {% for res in position_resources %}
+            {% if res.group.order == 1 %}
+            <li class="list-group-item" title="{{ res.description|safe }}">
+            <a href="{% url 'download_resource' res.id %}" >{{ res.name }}</a>
+            </li>
+            {% else %}
+            <li class="list-group-item" title="{{ res.description|safe }}">
+                {{ res.group.description}} - <a href="{% url 'download_resource' res.id %}" >{{ res.name }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}

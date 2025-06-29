@@ -374,3 +374,37 @@ class Vote(models.Model):
     
     def __str__(self):
         return self.competition.event.name + ": " + self.competition.type.type + " (" + self.competition.subject.subject + ")" + ": " + self.vote.option + " to " + self.image.title + ": " + self.image.author.firstname + " " + self.image.author.surname + " from " + self.voter.person.firstname + " " + self.voter.person.surname
+    
+class ResourceGroup(models.Model):
+    id = models.AutoField(primary_key=True)
+    description = models.CharField(max_length=150)
+    order = models.SmallIntegerField()
+
+    def __str__(self):
+        return self.description
+    
+    class Meta:
+        ordering = ["order"]
+
+    
+class Resource(models.Model):
+
+    class Visibility(models.TextChoices):
+        PUBLIC = 'P', 'Public'
+        MEMBER = 'M', 'Member'
+        COMMITTEE = 'C', 'Committee'
+        NONE = 'N', 'Specific Positions Only'
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=150)
+    description = models.TextField()
+    file = models.FileField(upload_to='files/resources/', blank=True, null=True)
+    group = models.ForeignKey(ResourceGroup, on_delete=models.PROTECT)
+    visibility = models.CharField(max_length=1,choices=Visibility.choices, default=Visibility.MEMBER)
+    positions = models.ManyToManyField(Position, related_name='resource_positions', blank=True)
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ["group__order"]

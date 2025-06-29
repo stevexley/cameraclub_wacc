@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import Http404, HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect, FileResponse
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.contrib import messages
@@ -13,10 +13,10 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormMixin
 from django.views.generic import CreateView, UpdateView, TemplateView, FormView
 from django.forms import inlineformset_factory
-from django.db.models import Sum, Max, Min, OuterRef, Subquery
+from django.db.models import Sum, Max, Min, OuterRef, Subquery, Q
 
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
-    Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter
+    Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter, Resource
 from .forms import *
 from .utils import pick_a_pic, get_exif_data
 from datetime import datetime, timedelta
@@ -1346,3 +1346,39 @@ def eoy_competition_labels(request):
         'competition': end_of_year_competition,
         'images': images,
     })
+
+class ResourcesView(ListView):
+    '''This page lists all resources for download based on user membership and/or position.'''
+    model = Resource
+    template_name = 'main/resources.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.person.member.current:
+            context['member'] = True
+        if self.request.user.groups.name == 'Committee':
+            context['committee'] = True
+        context['positions'] = self.request.user.person.position.all()
+
+        query = Q()
+        for pos in self.request.user.person.position.all():
+            query |= Q(positions=pos)
+
+        context['public_resources'] = Resource.objects.filter(visibility = 'P',
+                                                              file__isnull = False).order_by('group__order')
+        context['member_resources'] = Resource.objects.filter(visibility = 'M',
+                                                              file__isnull = False).order_by('group__order')
+        context['committee_resources'] = Resource.objects.filter(visibility = 'C',
+                                                                file__isnull = False).order_by('group__order')
+        all_position_resources = Resource.objects.filter(visibility = 'N',
+                                                        file__isnull = False).order_by('group__order')
+        context['position_resources'] = all_position_resources.filter(query).order_by('group__order')
+        return context
+    
+def download_resource(request, resource_id):
+    resource = get_object_or_404(Resource, pk=resource_id)
+    file_path = resource.file.path
+    response = FileResponse(open(file_path, 'rb'))
+    response['Content-Type'] = 'application/octet-stream'
+    response['Content-Disposition'] = f'attachment; filename="{resource.name}"'
+    return response

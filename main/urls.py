@@ -59,7 +59,8 @@ urlpatterns = [
     path('end-of-year-entry/colour_prints', eoy_competition_prints, name='end_of_year_entry_colour_prints'),
     path('end-of-year-entry/mono_labels', eoy_competition_labels, name='end_of_year_entry_mono_labels'),
     path('end-of-year-entry/colour_labels', eoy_competition_labels, name='end_of_year_entry_colour_labels'),
-    
+    path('resources', ResourcesView.as_view(), name="resources"),
+    path('resources/<int:resource_id>/', download_resource, name='download_resource'),
 #    path('image', views.image, name='image')
 ]
  
