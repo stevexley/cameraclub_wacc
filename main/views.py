@@ -1364,21 +1364,31 @@ class ResourcesView(ListView):
         for pos in self.request.user.person.position.all():
             query |= Q(positions=pos)
 
-        context['public_resources'] = Resource.objects.filter(visibility = 'P',
-                                                              file__isnull = False).order_by('group__order')
-        context['member_resources'] = Resource.objects.filter(visibility = 'M',
-                                                              file__isnull = False).order_by('group__order')
-        context['committee_resources'] = Resource.objects.filter(visibility = 'C',
-                                                                file__isnull = False).order_by('group__order')
-        all_position_resources = Resource.objects.filter(visibility = 'N',
-                                                        file__isnull = False).order_by('group__order')
+        context['public_resources'] = Resource.objects.filter(visibility = 'P'
+                                                                ).filter(
+                                                                    Q(file__isnull=False) & ~Q(file='')
+                                                                ).order_by('group__order')
+
+        context['member_resources'] = Resource.objects.filter(visibility = 'M'
+                                                                ).filter(
+                                                                    Q(file__isnull=False) & ~Q(file='')
+                                                                ).order_by('group__order')
+        context['committee_resources'] = Resource.objects.filter(visibility = 'C'
+                                                                ).filter(
+                                                                    Q(file__isnull=False) & ~Q(file='')
+                                                                ).order_by('group__order')
+        all_position_resources = Resource.objects.filter(visibility = 'N'
+                                                                ).filter(
+                                                                    Q(file__isnull=False) & ~Q(file='')
+                                                                ).order_by('group__order')
         context['position_resources'] = all_position_resources.filter(query).order_by('group__order')
         return context
     
 def download_resource(request, resource_id):
     resource = get_object_or_404(Resource, pk=resource_id)
     file_path = resource.file.path
+    file_name = resource.file.name.split('/')[-1] 
     response = FileResponse(open(file_path, 'rb'))
     response['Content-Type'] = 'application/octet-stream'
-    response['Content-Disposition'] = f'attachment; filename="{resource.name}"'
+    response['Content-Disposition'] = f'attachment; filename="{file_name}"'
     return response
