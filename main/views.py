@@ -188,12 +188,14 @@ class EventsView(YearArchiveView):
             month = event.starts.strftime('%B')
             events_by_month[month].append(event)
             if not event.image:
-                if event.competition_set.all:
-                    img_id = pick_a_pic(event.id)
-                    if img_id:
-                        image = Image.objects.get(id = img_id)
-                        event.image = image
-                        event.save()
+                if event.competition_set.exists():
+                    try:
+                        image = pick_a_pic(event.id)
+                        if image:
+                            event.image = image
+                            event.save()
+                    except Exception as e:
+                        print(f"Error setting image for event {event.id}: {e}")
         context['events_by_month'] = dict(events_by_month)
         context['months'] = list(calendar.month_name)[1:]
         return context

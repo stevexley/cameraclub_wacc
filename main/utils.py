@@ -339,13 +339,13 @@ def zip_gallery(request, gallery_pk):
         for image in images:
             imagefile = os.path.join(settings.MEDIA_ROOT, str(image.photo))
             # Slugify for safe filenames
-            if ["WAPF", "PrintWest"] in gallery.event.name:
+            if "WAPF" in gallery.event.name or "PrintWest" in gallery.event.name:
                 if "Mono" in gallery.name:
-                    newname = f"m_WAC_{slugify(image.author.firstname)} {slugify(image.author.surname)}_{slugify(image.title)}.jpg"
+                    newname = f"m_WAC_{image.author.firstname} {image.author.surname}_{image.title}.jpg"
                 else:
-                    newname = f"c_WAC_{slugify(image.author.firstname)} {slugify(image.author.surname)}_{slugify(image.title)}.jpg"
+                    newname = f"c_WAC_{image.author.firstname} {image.author.surname}_{image.title}.jpg"
             else:
-                newname = f"{slugify(image.author.firstname)}-{slugify(image.author.surname)}_{slugify(image.title)}.jpg"
+                newname = f"{image.author.firstname} {image.author.surname}_{image.title}.jpg"
             myzip.write(imagefile, newname)
 
     zip_buffer.seek(0)  # Go to the beginning of the BytesIO object
@@ -354,20 +354,13 @@ def zip_gallery(request, gallery_pk):
     return response
 
 def pick_a_pic(event_pk):
-    comps = Competition.objects.filter(event__id = event_pk,
-                                       type__type = 'Set Digital')
-    value = 0
+    comps = Competition.objects.filter(event__id=event_pk, type__type='Set Digital')
     for comp in comps:
-        images = Image.objects.filter(competitions = comp,
-                                    award__type = 1)
-        if not images:
-            images = Image.objects.filter(competitions = comp,
-                                            award__type = 4)
-        for image in images:
+        for award_type in [1, 4]:
+            image = Image.objects.filter(competitions=comp, award__type=award_type).first()
             if image:
-                value = image.id
-                break
-    return value
+                return image
+    return None
 
 @permission_required("main.change_event")
 def set_comp_images(request):
