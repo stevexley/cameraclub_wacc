@@ -72,7 +72,7 @@ class Person(models.Model):
         return self.surname + ', ' + self.firstname
     
     class Meta:
-        ordering = ["surname", "firstname"]
+        ordering = ["firstname", "surname"]
     
 class Member(models.Model):
     '''The member model that contains present and past members.
