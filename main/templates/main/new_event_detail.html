@@ -206,7 +206,7 @@
             {% if event.gallery_set.all %}
                 {% for gallery, images in gallery_images_by_gallery.items %}
                     <div class='mb-2 p-1 border rounded'>
-                        {% if gallery.public_after|date:"Y-m-d" < todays_date and gallery.private == False %}
+                        {% if gallery.public_after|date:"Y-m-d" < todays_date or user.person.member.current and gallery.private == False %}
                             {% include "main/includes/gallery.html" %}
                         {% elif "President" in user.person.position.first.position or "Competition" in user.person.position.first.position or "Webmaster" in user.person.position.first.position %}
                             {% include "main/includes/gallery.html" %}

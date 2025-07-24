@@ -198,6 +198,7 @@ class EventsView(YearArchiveView):
                         print(f"Error setting image for event {event.id}: {e}")
         context['events_by_month'] = dict(events_by_month)
         context['months'] = list(calendar.month_name)[1:]
+        context['right_now'] = timezone.now()
         return context
 
 @permission_required("main.change_event")

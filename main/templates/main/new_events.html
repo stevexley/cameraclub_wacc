@@ -22,7 +22,7 @@
             </div>
             {% now "Y-m-d" as todays_date %}
             {% now "F" as todays_month %}
-            {% now "Y-m-d H:i" as right_now %}
+
             <div class="content">
                 {% for month, events in events_by_month.items %}
                     <div class="card mb-2 px-2 pt-2"><h3>{{ month }}</h3>
@@ -34,7 +34,7 @@
                             {% if not event.hide_from_public%}
                                 {% include "main/includes/event_card.html" %}
                             {% elif user.is_authenticated and user.person.member.current %}
-                                {% if event.hide_from_members_until == None or event.hide_from_members_until <= today %}
+                                {% if not event.hide_from_members_until or event.hide_from_members_until <= right_now %}
                                     {% include "main/includes/event_card.html" %}
                                 {% elif "President" in user.person.position.first.position or "Competition" in user.person.position.first.position%}
                                     {% include "main/includes/event_card_hidden.html" %}
