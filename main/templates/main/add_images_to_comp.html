@@ -28,8 +28,46 @@
             </div>
         </div>
         
+        <!-- Select existing images -->
+        <div class="card my-3">
+            <div class="card-header"><h3>Add Existing Images</h3></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ existing_form.as_p }}
+                    <button class="btn btn-primary" type="submit">Add Selected</button>
+                </form>
+            </div>
+        </div>
+
         <ol class="list-group list-group-numbered">
             {% for image in images %}<li class="list-group-item">{{ image.title }} by {{ image.author }}</li>{% endfor %}
         </ol>
     </div>
-{% endblock content %}5
+{% endblock content %}
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $("#id_existing_images").select2({
+            width: "100%",
+            placeholder: "Start typing the title...",
+            ajax: {
+                url: "{% url 'image_search' %}",
+                dataType: "json",
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term, // search term
+                        competition: "{{ competition.pk }}" // so we can exclude
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.results
+                    };
+                }
+            }
+        });
+    });
+    </script>
+{% endblock scripts %}

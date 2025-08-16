@@ -61,6 +61,7 @@ urlpatterns = [
     path('end-of-year-entry/colour_labels', eoy_competition_labels, name='end_of_year_entry_colour_labels'),
     path('resources', ResourcesView.as_view(), name="resources"),
     path('resources/<int:resource_id>/', download_resource, name='download_resource'),
+    path("ajax/image-search/", image_search, name="image_search"),
 #    path('image', views.image, name='image')
 ]
  

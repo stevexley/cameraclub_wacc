@@ -139,7 +139,19 @@ class PhotoForm(forms.ModelForm):
         model = Image
         fields = ('photo',)
 
+class ExistingImageForm(forms.Form):
+    existing_images = forms.ModelMultipleChoiceField(
+        queryset=Image.objects.none(),
+        widget=forms.SelectMultiple(attrs={'class': 'form-control select2'}),
+        required=False,
+        label="Select Existing Images"
+    )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # On POST, bind queryset to all images (so validation works)
+        if self.is_bound:
+            self.fields["existing_images"].queryset = Image.objects.all()
 
 class CompForm(forms.ModelForm):
     

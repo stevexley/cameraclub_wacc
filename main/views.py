@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import Http404, HttpResponseRedirect, FileResponse
+from django.http import Http404, HttpResponseRedirect, FileResponse, JsonResponse
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from django.contrib import messages
@@ -780,6 +780,72 @@ class UploadPhotoView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse('profile', kwargs={'pk': self.object.author.id })
 
+# class AddImagesToCompetitionView(FormMixin, ListView):
+#     model = Image
+#     template_name = 'main/add_images_to_comp.html'
+#     context_object_name = 'images'
+#     form_class = ImageForm
+
+#     def get_form_kwargs(self):
+#         kwargs = super().get_form_kwargs()
+#         kwargs['pk'] = self.kwargs.get('pk')
+#         kwargs['source_view'] = 'add_images'  # Indicate the source view
+#         kwargs['gallery'] = False
+#         return kwargs
+    
+#     def get_queryset(self):
+#         competition = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
+#         # order by id so that numbered list matches order of entry
+#         # this is for print list and stickers on comp night 
+#         return competition.images.all().order_by('id')
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context['competition'] = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
+#         context['form'] = self.get_form()
+#         return context
+
+#     def post(self, request, *args, **kwargs):
+#         self.object_list = self.get_queryset()
+#         form = self.get_form()
+#         if form.is_valid():
+#             return self.form_valid(form)
+#         else:
+#             return self.form_invalid(form)
+
+#     def form_valid(self, form):
+#         competition = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
+#         image = form.save(commit=False)
+#         image.save()
+#         competition.images.add(image)
+#         return super().form_valid(form)
+
+#     def get_success_url(self):
+#         return reverse('competition_add_images', kwargs={'pk': self.kwargs.get('pk')})
+
+@login_required
+def image_search(request):
+    """Return JSON for Select2 AJAX search."""
+    term = request.GET.get("q", "")
+    competition_id = request.GET.get("competition")
+    
+    qs = Image.objects.all()
+    
+    # exclude already-added images if competition given
+    if competition_id:
+        qs = qs.exclude(pk__in=Image.objects.filter(
+            competitions__pk=competition_id
+        ).values_list("pk", flat=True))
+
+    if term:
+        qs = qs.filter(title__icontains=term)
+    
+    results = [
+        {"id": img.pk, "text": f"{img.title} by {img.author}"}
+        for img in qs[:20]  # limit results
+    ]
+    return JsonResponse({"results": results})
+
 class AddImagesToCompetitionView(FormMixin, ListView):
     model = Image
     template_name = 'main/add_images_to_comp.html'
@@ -789,24 +855,35 @@ class AddImagesToCompetitionView(FormMixin, ListView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['pk'] = self.kwargs.get('pk')
-        kwargs['source_view'] = 'add_images'  # Indicate the source view
+        kwargs['source_view'] = 'add_images'
         kwargs['gallery'] = False
         return kwargs
     
     def get_queryset(self):
         competition = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
-        # order by id so that numbered list matches order of entry
-        # this is for print list and stickers on comp night 
         return competition.images.all().order_by('id')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['competition'] = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
+        competition = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
+        context['competition'] = competition
         context['form'] = self.get_form()
+        context['existing_form'] = ExistingImageForm()
         return context
 
     def post(self, request, *args, **kwargs):
         self.object_list = self.get_queryset()
+
+        if "existing_images" in request.POST:
+            existing_form = ExistingImageForm(request.POST)
+            if existing_form.is_valid():
+                competition = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
+                for img in existing_form.cleaned_data['existing_images']:
+                    competition.images.add(img)
+                return redirect(self.get_success_url())
+            else:
+                return self.render_to_response(self.get_context_data(existing_form=existing_form))
+        
         form = self.get_form()
         if form.is_valid():
             return self.form_valid(form)
@@ -822,7 +899,7 @@ class AddImagesToCompetitionView(FormMixin, ListView):
 
     def get_success_url(self):
         return reverse('competition_add_images', kwargs={'pk': self.kwargs.get('pk')})
-    
+
 class JudgeAwardUpdateView(PermissionRequiredMixin, TemplateView):
     template_name = 'main/award_entries.html'
     permission_required = "main.change_competition"

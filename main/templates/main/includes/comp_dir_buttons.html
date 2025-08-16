@@ -9,3 +9,7 @@
 {% if competition.images.all %}<a class="btn btn-primary mt-1" href="{% url 'list_entries' competition.id %}">List of Entries</a>{% endif %}
 {% if competition.images.all %}<a class="btn btn-primary mt-1" href="{% url 'view_entries' competition.id %}">View Entries</a>{% endif %}
 {% if competition.images.all %}<a class="btn btn-primary mt-1" href="{% url 'create_zip' competition.id %}">Download Zip</a>{% endif %}
+<a class="btn btn-primary mt-1" href="{% url 'competition_add_images' competition.id %}">Add Images</a>
+{% if competition.images.all %}<a class="btn btn-primary mt-1" href="{% url 'edit_judge_awards' competition.id %}">Edit Judge Awards</a>{% endif %}
+{% if competition.images.all %}<a class="btn btn-primary mt-1" href="{% url 'edit_member_awards' competition.id %}">Edit Member Awards</a>{% endif %}
+
