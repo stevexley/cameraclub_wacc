@@ -74,7 +74,7 @@
                     {% else %}
                     <div class="card text-center">
                         <div class="card-header">
-                          <h3>Competitions held on the night were:</h3>
+                          <h3>Competitions</h3>
                           <ul class="nav nav-tabs card-header-tabs" role="tablist">
                             {% for comp in comps %}
                                 {% if forloop.first %}
@@ -86,19 +86,19 @@
                           </ul>
                         </div>
                         <div class="card-body tab-content" id="nav-tabContent">
-                        {% for comp in comps %}
+                        {% for competition in comps %}
                             {% if forloop.first %}
-                            <div class="tab-pane fade show active" id="{{ comp.type|slugify }}" role="tabpanel" aria-labelledby="{{ comp.type|slugify }}-tab">
+                            <div class="tab-pane fade show active" id="{{ competition.type|slugify }}" role="tabpanel" aria-labelledby="{{ competition.type|slugify }}-tab">
                             {% else %}
-                            <div class="tab-pane fade" id="{{ comp.type|slugify }}" role="tabpanel" aria-labelledby="{{ comp.type|slugify }}-tab">
+                            <div class="tab-pane fade" id="{{ competition.type|slugify }}" role="tabpanel" aria-labelledby="{{ competition.type|slugify }}-tab">
                             {% endif %}
                             {% comment %} if there are awards and the user is a current member {% endcomment %}
                             {% if user.person.member.current %}
-                            {% if comp.award_set.all %}
+                            {% if competition.award_set.all %}
                                 {% if judge_awards.all %}
                                   <div class="col">
                                     <h3>Judge's Awards</h3>
-                                    {% if comp.judge %}<h4>Awarded by {{ comp.judge }}</h4>{% endif %}
+                                    {% if competition.judge %}<h4>Awarded by {{ competition.judge }}</h4>{% endif %}
                                     <table class="table table-hover wacc-table">
                                       <thead>
                                         <th scope="col">Award</th>
@@ -107,7 +107,7 @@
                                       </thead>
                                       <tbody>
                                         {% for award in judge_awards %}
-                                            {% if award.competition == comp %}
+                                            {% if award.competition == competition %}
                                           <tr>
                                             <td>{{ award.type.name }}</td>
                                             <td>{{ award.image.title }}</td>
@@ -123,7 +123,7 @@
                                 {% endif %}
                                 {% if perms.main.change_competition %}
                                   <a class="btn btn-primary btn-block mb-2"
-                                     href="{% url 'edit_judge_awards' comp.id %}">Edit Judge Awards</a>
+                                     href="{% url 'edit_judge_awards' competition.id %}">Edit Judge Awards</a>
                                 {% endif %}
                                 {% if member_awards.all %}
                                     <div class="col">
@@ -136,7 +136,7 @@
                                         </thead>
                                         <tbody>
                                           {% for award in member_awards %}
-                                          {% if award.competition == comp %}
+                                          {% if award.competition == competition %}
                                             <tr>
                                               <td>{{ award.type.name }}</td>
                                               <td>{{ award.image.title }}</td>
@@ -153,23 +153,23 @@
                                 {% endif %}
                                     {% if perms.main.change_competition %}
                                         <a class="btn btn-primary btn-block"
-                                         href="{% url 'edit_member_awards' comp.id %}">Edit Member Awards</a>
+                                         href="{% url 'edit_member_awards' competition.id %}">Edit Member Awards</a>
                                         <a class="btn btn-primary btn-block"
-                                         href="{% url 'competition_add_images' comp.id %}">Add Images</a>
+                                         href="{% url 'competition_add_images' competition.id %}">Add Images</a>
                                     {% endif %}
                                 </div>
                             {% endif %}
                             {% endif %}
                             {% comment %} if the comp has any images uploaded {% endcomment %}
-                            {% if comp.images.all %}
+                            {% if competition.images.all %}
                             </br>
-                            {% if 'Open' or 'End of Year' in comp.type.type %}
-                                <h4>{{ comp.type }} Awarded Images:</h4>
+                            {% if 'Open' or 'End of Year' in competition.type.type %}
+                                <h4>{{ competition.type }} Awarded Images:</h4>
                             {% else %}
-                                <h4>{{ comp.type }} (Subject: {{ comp.subject }}) Awarded Images:</h4>
+                                <h4>{{ competition.type }} (Subject: {{ competition.subject }}) Awarded Images:</h4>
                             {% endif %}
                             <ul class="image-gallery">
-                                {% for image in comp.images.all %}
+                                {% for image in competition.images.all %}
                                     {% if image.award_set.all %}
                                     {% if image.photo %}
                                         {% include "main/includes/gallery_items.html" %}
@@ -177,6 +177,11 @@
                                     {% endif %}
                                 {% endfor %}
                             </ul>
+                        {% endif %}
+                        {% if "President" in user.person.position.all.first.position or "Competition" in user.person.position.all.first.position or "Webmaster" in user.person.position.all.first.position %}
+                            <div>
+                            {% include "main/includes/comp_dir_buttons.html" %}
+                            </div>
                         {% endif %}
                         </div>
                     {% endfor %}
