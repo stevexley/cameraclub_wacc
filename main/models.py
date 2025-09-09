@@ -1,6 +1,6 @@
 import os
 from django.core.exceptions import ValidationError
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User
@@ -37,7 +37,7 @@ def generate_thumbnail(pdf_path, thumb_path, size=(200, 300)):
 class Newsletter(models.Model):
     '''Club Newsletters (issued monthly)'''
     id = models.AutoField(primary_key=True)
-    issue_date = models.DateTimeField(auto_now_add=True)
+    issue_date = models.DateTimeField(default=datetime.now())
     file = models.FileField(upload_to='files/news/')
     thumb = models.ImageField(upload_to='files/news/thum', blank=True, null=True)
     

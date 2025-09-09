@@ -1178,6 +1178,26 @@ def copy_to_gallery(request, in_gallery_pk):
 
     return inner_copy_to_gallery(request, in_gallery_pk)
 
+class NewsletterCreateView(PermissionRequiredMixin, CreateView):
+    model = Newsletter
+    permission_required = "main.add_newsletter"
+    form_class = NewsletterForm
+    template_name = 'main/newsletter_form.html'
+    
+    def get_success_url(self):
+        # Redirect to the Newsletter page for the year of the created newsletter
+        return reverse_lazy('news', kwargs={'year': self.object.issue_date.year})
+    
+class NewsletterUpdateView(PermissionRequiredMixin, UpdateView):
+    model = Newsletter
+    permission_required = "main.change_newsletter"
+    form_class = NewsletterForm
+    template_name = 'main/newsletter_form.html'
+    
+    def get_success_url(self):
+        # Redirect to the Newsletter page for the year of the created newsletter
+        return reverse_lazy('news', kwargs={'year': self.object.issue_date.year})
+
 
 def add_member(request):
     '''View which combines 3 forms to add info to User, Person and Member models in one go'''

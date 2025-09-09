@@ -35,8 +35,18 @@
             <div>
                 {{ letter.issue_date|date:"F"}} {{ letter.issue_date|date:"Y" }}
             </div>
+            {% if perms.main.change_newsletter %}
+            <div>
+                <a class="btn btn-primary btn-sm" href="{% url 'edit_newsletter' pk=letter.id %}">Edit</a>
+            </div>
+            {% endif %}
         </div>
     {% endfor %}
+    </div>
+    {% endif %}
+    {% if perms.main.add_newsletter %}
+    <div>
+        <a class="btn btn-primary" href="{% url 'add_newsletter' %}">Add Newsletter</a>
     </div>
     {% endif %}
 </div>

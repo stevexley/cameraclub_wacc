@@ -1,0 +1,36 @@
+{% extends 'main/base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<h1>Add/Edit Newsletter</h1>
+
+<div class="container">
+    <div class="col">
+        <div class="row">
+            <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+            {% endfor %}
+                <div class="form-group">
+                {% for field in form %}
+                <div class="mb-3">
+                    {% for error in field.errors %}
+                        <span class="help-block">{{ error }}</span>
+                    {% endfor %}
+                    {% if field.name == 'issue_date'%}
+                <p>The Issue date will decide the month and year of the newsletter</p> 
+                    {% endif %}
+                    {{ field }}
+                </div>
+                {% endfor %}
+                </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+    </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+{% endblock scripts %}

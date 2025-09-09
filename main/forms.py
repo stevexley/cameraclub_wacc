@@ -4,7 +4,7 @@ from django import forms
 from django.forms import formset_factory, BaseFormSet, BaseInlineFormSet, inlineformset_factory
 from django.forms.widgets import SplitDateTimeWidget
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from .models import Image, Competition, Subject, CompetitionType, Judge, Event, Award, AwardType, Person, User, Member, Gallery
+from .models import *
 from .utils import setTitleCase, checkWidth, checkHeight, checkOneEntry, checkMono
 
 # class EventUploadForm(forms.ModelForm):
@@ -348,3 +348,18 @@ class GallerySelectionForm(forms.Form):
         self.fields['images'].queryset = images
         self.fields['out_gallery'].queryset = Gallery.objects.filter(event__starts__year__gte = datetime.now().year)
         self.user = user
+
+class NewsletterForm(forms.ModelForm):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs['class'] = 'form-control'
+            if any(word in visible.name for word in ["date"]):
+                visible.field.widget.input_type = 'datetime-local'
+            visible.field.widget.attrs['placeholder'] = visible.field.label
+            visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
+
+    class Meta:
+        model = Newsletter
+        fields = ('issue_date', 'file')
