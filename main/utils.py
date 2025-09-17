@@ -241,6 +241,26 @@ def award_gold(request, comp_pk, image_pk):
     gold.save()
     return HttpResponse("Gold Awarded")
 
+def award_gold_dist(request, comp_pk, image_pk):
+    '''Award a gold distinction judge's award to the image in the comp
+    Remove any other judge's awards if they exist'''
+    awards = Award.objects.filter(
+        image_id = image_pk,
+        type__awarded_by__awarded_by = "judge's award",
+        competition_id = comp_pk
+    )
+    if awards:
+        for award in awards:
+            award.delete()
+
+    gold_dist = Award.objects.create(
+        image_id = image_pk,
+        type_id = 18,
+        competition_id = comp_pk
+    )
+    gold_dist.save()
+    return HttpResponse("Gold Distinction Awarded")
+
 def award_silver(request, comp_pk, image_pk):
     '''Award a silver judge's award to the image in the comp'''
     awards = Award.objects.filter(
@@ -277,6 +297,25 @@ def award_bronze(request, comp_pk, image_pk):
     )
     bronze.save()
     return HttpResponse("Bronze Awarded")
+
+def award_merit(request, comp_pk, image_pk):
+    '''Award a judge's merit award to the image in the comp'''
+    awards = Award.objects.filter(
+        image_id = image_pk,
+        type__awarded_by__awarded_by = "judge's award",
+        competition_id = comp_pk
+    )
+    if awards:
+        for award in awards:
+            award.delete()
+            
+    merit = Award.objects.create(
+        image_id = image_pk,
+        type_id = 10,
+        competition_id = comp_pk
+    )
+    merit.save()
+    return HttpResponse("Merit Awarded")
 
 def import_pics(request):
     '''Loop through images, find files in media directory that match author name and title

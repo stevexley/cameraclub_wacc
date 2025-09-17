@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -29,9 +30,11 @@
                         <div class="carousel-item" data-image-id={{ image.id }}>
                             <div class="d-flex align-items-center justify-content-center min-vh-100">
                                 <img src="{{ image.photo.url }}" alt="{{ image.title }}">
+                                <div id="Gold_Distinction" class="hidden"><h2 id="Gold_DistinctionH2" class='hidden'>Gold Distinction - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Gold" class="hidden"><h2 id="GoldH2" class='hidden'>Gold - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Silver" class="hidden"><h2 id="SilverH2" class='hidden'>Silver - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Bronze" class="hidden"><h2 id="BronzeH2" class='hidden'>Bronze - {{ image.title }} by {{ image.author }}</h2></div>
+                                <div id="Merit" class="hidden"><h2 id="MeritH2" class='hidden'>Merit - {{ image.title }} by {{ image.author }}</h2></div>
                             </div>
                         </div>
                         {% else %}
@@ -47,9 +50,11 @@
                         <div class="carousel-item" data-image-id={{ image.id }}>
                             <div class="d-flex align-items-center justify-content-center min-vh-100">
                                 <img src="{{ image.photo.url }}" alt="{{ image.title }}">
+                                <div id="Gold_Distinction" class="hidden"><h2 id="Gold_DistinctionH2" class='hidden'>Gold Distinction - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Gold" class="hidden"><h2 id="GoldH2" class='hidden'>Gold - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Silver" class="hidden"><h2 id="SilverH2" class='hidden'>Silver - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Bronze" class="hidden"><h2 id="BronzeH2" class='hidden'>Bronze - {{ image.title }} by {{ image.author }}</h2></div>
+                                <div id="Merit" class="hidden"><h2 id="MeritH2" class='hidden'>Merit - {{ image.title }} by {{ image.author }}</h2></div>
                             </div>
                         </div>
                         {% endif %}
@@ -66,9 +71,11 @@
                         <div class="carousel-item" data-image-id={{ image.id }}>
                             <div class="d-flex align-items-center justify-content-center min-vh-100">
                                 <img src="{{ image.photo }}" alt="{{ image.title }}">
+                                <div id="Gold_Distinction" class="hidden"><h2 id="Gold_DistinctionH2" class='hidden'>Gold Distinction - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Gold" class="hidden"><h2 id="GoldH2" class='hidden'>Gold - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Silver" class="hidden"><h2 id="SilverH2" class='hidden'>Silver - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Bronze" class="hidden"><h2 id="BronzeH2" class='hidden'>Bronze - {{ image.title }} by {{ image.author }}</h2></div>
+                                <div id="Merit" class="hidden"><h2 id="MeritH2" class='hidden'>Merit - {{ image.title }} by {{ image.author }}</h2></div>
                             </div>
                         </div>
                         {% else %}
@@ -84,9 +91,11 @@
                         <div class="carousel-item" data-image-id={{ image.id }}>
                             <div class="d-flex align-items-center justify-content-center min-vh-100">
                                 <img src="{{ image.photo }}" alt="{{ image.title }}">
+                                <div id="Gold_Distinction" class="hidden"><h2 id="Gold_DistinctionH2" class='hidden'>Gold Distinction - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Gold" class="hidden"><h2 id="GoldH2" class='hidden'>Gold - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Silver" class="hidden"><h2 id="SilverH2" class='hidden'>Silver - {{ image.title }} by {{ image.author }}</h2></div>
                                 <div id="Bronze" class="hidden"><h2 id="BronzeH2" class='hidden'>Bronze - {{ image.title }} by {{ image.author }}</h2></div>
+				<div id="Merit" class="hidden"><h2 id="MeritH2" class='hidden'>Merit - {{ image.title }} by {{ image.author }}</h2></div>
                             </div>
                         </div>
                         {% endif %}                    
@@ -125,8 +134,8 @@
     // This script listens for 1 2 or 3 being pressed and adds gold, silver or bronze awards to 
     // the image showing in the carousel
     document.addEventListener('keydown', function(event) {
-        if (event.key === '1' || event.key === '2' || event.key === '3' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-            if (event.key === '1' || event.key === '2' || event.key === '3') { 
+        if (event.key === '0' || event.key === '1' || event.key === '2' || event.key === '3' || event.key === '4' || event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            if (event.key === '0' || event.key === '1' || event.key === '2' || event.key === '3' || event.key === '4') { 
                 
                 var compPk = {{ competition.id }};
                 // Find the active carousel item
@@ -140,6 +149,10 @@
                 var targetElementId;
                 var xhr = new XMLHttpRequest();
                 switch (event.key) {
+                    case '0':
+                        targetElementId = 'Gold_Distiction';
+                        awardType = 'gold+';
+                        break;
                     case '1':
                         targetElementId = 'Gold';
                         awardType = 'gold';
@@ -151,6 +164,10 @@
                     case '3':
                         targetElementId = 'Bronze';
                         awardType = 'bronze';
+                        break;
+                    case '4':
+                        targetElementId = 'Merit';
+                        awardType = 'merit';
                         break;
                 }
 
@@ -192,4 +209,3 @@
     </script>
 
 </html>
-
