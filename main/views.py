@@ -292,7 +292,8 @@ class EventDetailView(DetailView):
             context['user_images'] = user_images
         for comp in context['comps']:
             comp.has_entries = any(img.competitions.filter(id=comp.id).exists() for img in user_images)
-        
+            comp.has_one_entry_rule = comp.type.rules.filter(rule="One Entry").exists()
+            
         return context
 
 def remove_entry(request, comp_id, img_id):
@@ -630,10 +631,13 @@ def count_votes(competition):
     images = competition.images.all()
 
     # Calculate total points for each image in the competition
+    # 2025-09-21 added Printvotes for voting on the night
     image_points = {}
     for image in images:
         total_points = image.vote_set.aggregate(total_points=Sum('vote__points'))['total_points'] or 0
+        total_points += image.printvote_set.aggregate(total_points=Sum('vote__points'))['total_points'] or 0
         three_point_count = image.vote_set.filter(vote__points=3).count() or 0
+        three_point_count += image.printvote_set.filter(vote__points=3).count() or 0
         image_points[image] = (total_points, three_point_count)
     
     # Sort images based on total points and 3 point count in descending order
@@ -688,7 +692,23 @@ def count_votes(competition):
 @user_passes_test(user_has_permission)
 def count_up_votes(request, competition_id):
     competition = get_object_or_404(Competition, id=competition_id)
-    print(competition)
+    count_votes(competition)
+    url = reverse('competition_awards', kwargs={'pk': competition_id})
+    return redirect(url)
+
+@login_required
+@user_passes_test(user_has_permission)
+def asign_print_votes(request, competition_id):
+    '''Add Image objects to PrintVotes based on number of print in comp
+    then run count_votes function tallies votes for teh competition.
+    Should be run when all Images from the comp have been added and all voting is complete.'''
+    competition = get_object_or_404(Competition, id=competition_id)
+    votes = PrintVote.objects.filter(competition = competition)
+    for vote in votes:
+        printimage = PrintImage.objects.filter(competition = competition,
+                                          number = vote.number)
+        vote.image = printimage.image
+        vote.save()
     count_votes(competition)
     url = reverse('competition_awards', kwargs={'pk': competition_id})
     return redirect(url)

@@ -13,8 +13,9 @@
             </div>
         {% endif %}
     {% endfor %}
-    {% if not competition.has_entries %}
+    {% if not competition.has_entries or not competition.has_one_entry_rule %}
         <a class="btn btn-outline-primary float-right m-1" href="{% url 'enter_competition' competition.id %}">Upload Entry</a>
+
     {% endif %}
 {% elif competition.open_for_judging|date:"Y-m-d" <= todays_date and "igital" in competition.type.type and competition.members_vote %}
     <a class="btn btn-outline-primary float-right m-1" href="{% url 'competition_vote' competition.id %}">Vote</a>

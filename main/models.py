@@ -374,7 +374,27 @@ class Vote(models.Model):
     
     def __str__(self):
         return self.competition.event.name + ": " + self.competition.type.type + " (" + self.competition.subject.subject + ")" + ": " + self.vote.option + " to " + self.image.title + ": " + self.image.author.firstname + " " + self.image.author.surname + " from " + self.voter.person.firstname + " " + self.voter.person.surname
+
+class PrintImage(models.Model):
+    '''A record of the numbers given to images in print competitions to allow matching votes to images'''
+    id = models.AutoField(primary_key=True)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    number = models.SmallIntegerField()
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+
+class PrintVote(models.Model):
+    '''A vote in a print Competition, will not be linked to an Image object at time of voting, just number.
+    If done by member add member, but can be added manually without Member'''
+    id = models.AutoField(primary_key=True)
+    vote = models.ForeignKey(VoteOption, on_delete=models.PROTECT)
+    number = models.SmallIntegerField()
+    image = models.ForeignKey(Image, null=True, blank=True, on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    voter = models.ForeignKey(Member, null=True, blank=True, on_delete=models.CASCADE)
     
+    def __str__(self):
+        return self.competition.event.name + ": " + self.competition.type.type + " (" + self.competition.subject.subject + ")" + ": " + self.vote.option + " to " + str(self.number)
+
 class ResourceGroup(models.Model):
     id = models.AutoField(primary_key=True)
     description = models.CharField(max_length=150)
