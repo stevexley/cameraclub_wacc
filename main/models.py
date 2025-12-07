@@ -263,10 +263,11 @@ class Competition(models.Model):
     display_awarded = models.BooleanField(default=True)
     
     def __str__(self):
-        if self.subject.subject == 'Open Colour' or self.subject.subject == 'Open Mono':
-            return str(self.event.starts.year) + " " + self.event.name + ": " + self.type.type 
-        else:
-            return str(self.event.starts.year) + " " + self.event.name + ": " + self.type.type + " (" + self.subject.subject + ")"
+        subject = self.subject.subject if self.subject else None
+        base = f"{self.event.starts.year} {self.event.name}: {self.type.type}"
+        if subject in ('Open Colour', 'Open Mono'):
+            return base
+        return f"{base} ({subject})" if subject else base
 
     class Meta:
         ordering = ["-event__starts", "type__type"]

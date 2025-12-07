@@ -89,8 +89,10 @@ class MainGalleryView(ListView):
             award__type__display_award=True
         ).annotate(
             max_end=Subquery(latest_judging)
-        ).distinct().order_by('-max_end')[:200]
+        ).distinct().order_by('-max_end')
         
+        images = images.exclude(competitions__display_awarded=False)[:200]
+
         return images
 
 class AboutUsView(View):
@@ -381,9 +383,10 @@ def setup_competition_night(request, event_id):
                                                          type = 'Open Colour Prints')
                 competition1 = Competition.objects.create(
                         subject=Subject.objects.get(subject="Open Colour"),
-                        open_for_entries=event.starts - timedelta(days = 90),
-                        entries_close=event.starts - timedelta(days = 8),
-                        judging_closes=event.ends - timedelta(hours = 1),
+                        open_for_entries=event.starts,
+                        entries_close=event.starts,
+                        open_for_judging=event.starts,
+                        judging_closes=event.ends,
                         type=opencolourprint,
                         event=event
                 )
@@ -393,9 +396,10 @@ def setup_competition_night(request, event_id):
                                                          type = 'Open Colour Digital')
                 competition2 = Competition.objects.create(
                         subject=Subject.objects.get(subject="Open Colour"),
-                        open_for_entries=event.starts - timedelta(days = 90),
+                        open_for_entries=datetime.today(),
                         entries_close=event.starts - timedelta(days = 8),
-                        judging_closes=event.ends - timedelta(days = 2),
+                        open_for_judging=event.starts - timedelta(days = 7),
+                        judging_closes=event.ends - timedelta(days = 1),
                         type=opencolourdigital,
                         event=event
                 )
@@ -417,9 +421,10 @@ def setup_competition_night(request, event_id):
                                                          type = 'Open Mono Digital')
                 competition2 = Competition.objects.create(
                         subject=Subject.objects.get(subject="Open Mono"),
-                        open_for_entries=event.starts - timedelta(days = 90),
+                        open_for_entries=datetime.today(),
                         entries_close=event.starts - timedelta(days = 8),
-                        judging_closes=event.ends - timedelta(days = 2),
+                        open_for_judging=event.starts - timedelta(days = 7),
+                        judging_closes=event.ends - timedelta(days = 1),
                         type=openmonodigital,
                         event=event
                 )
@@ -431,6 +436,7 @@ def setup_competition_night(request, event_id):
                     subject=set_subject[0],
                     open_for_entries=event.starts,
                     entries_close=event.starts,
+                    open_for_judging=event.starts,
                     judging_closes=event.ends,
                     type=setprint,
                     event=event
@@ -441,9 +447,10 @@ def setup_competition_night(request, event_id):
                                                         type = 'Set Digital')
             competition4 = Competition.objects.create(
                     subject=set_subject[0],
-                    open_for_entries=event.starts - timedelta(days = 90),
+                    open_for_entries=datetime.today(),
                     entries_close=event.starts - timedelta(days = 8),
-                    judging_closes=event.ends - timedelta(days = 2),
+                    open_for_judging=event.starts - timedelta(days = 7),
+                    judging_closes=event.ends - timedelta(days = 1),
                     type=setdigital,
                     event=event
             )

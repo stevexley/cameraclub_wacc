@@ -52,7 +52,53 @@ class EventUploadForm(forms.ModelForm):
 
         # return cleaned_data
 
+class EventAdminForm(forms.ModelForm):
+    existing_file = forms.ChoiceField(
+        choices=[],
+        required=False,
+        label="Select an existing file"
+    )
 
+    class Meta:
+        model = Event
+        fields = [
+            'name',
+            'description',
+            'starts',
+            'ends',
+            'existing_file',   # <-- manually place it BEFORE
+            'file',            # <-- upload field
+            'image',
+            'hide_from_members_until',
+            'hide_from_public',
+            'extra_viewers',
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # build a list of distinct previously used file paths
+        files = (
+            Event.objects.exclude(file="")
+            .exclude(file__isnull=True)
+            .values_list('file', flat=True)
+            .distinct()
+        )
+
+        self.fields['existing_file'].choices = [("", "---")] + [
+            (f, f.split("/")[-1]) for f in files
+        ]
+
+    def clean(self):
+        cleaned = super().clean()
+
+        existing = cleaned.get('existing_file')
+
+        # If user selected a file AND didn't upload a new one
+        if existing and not cleaned.get("file"):
+            cleaned["file"] = existing
+
+        return cleaned
 
 class ImageForm(forms.ModelForm):
     

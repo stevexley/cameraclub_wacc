@@ -1,7 +1,44 @@
 from django.contrib import admin
 from .models import *
+from .forms import EventAdminForm
 
 admin.site.site_header = "WACC Site Admin"
+
+class HasCompetitionFilter(admin.SimpleListFilter):
+    title = 'competition entered'
+    parameter_name = 'has_competition'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Entered in competitions'),
+            ('no', 'Not entered'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'yes':
+            return queryset.filter(competitions__isnull=False).distinct()
+        if value == 'no':
+            return queryset.filter(competitions__isnull=True).distinct()
+        return queryset
+    
+class HasEventImageFilter(admin.SimpleListFilter):
+    title = 'Used as event image'
+    parameter_name = 'has_event'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Used as an Event image'),
+            ('no', 'Not used'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'yes':
+            return queryset.filter(event__isnull=False).distinct()
+        if value == 'no':
+            return queryset.filter(event__isnull=True).distinct()
+        return queryset
 
 
 # Register your models here.)admin.site.register(Person)
@@ -50,13 +87,26 @@ class JudgeAdmin(admin.ModelAdmin):
      
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
-    search_fields = [ 'title', 'author__surname', 'id' ]
+    def competitions_list(self, obj):
+        return ", ".join(str(c) for c in obj.competitions.all())
+    competitions_list.short_description = 'Competitions'
+    search_fields = [
+        'title',
+        'author__surname',
+        'id',
+        'competitions__event__name',
+        'competitions__subject__subject',
+        'competitions__type__type'
+    ]
     date_hierarchy = 'competitions__event__starts'
-    list_display = [ 'id', 'title', 'print','author', 'photo']
+    list_display = [ 'id', 'title', 'print','author', 'photo', 'competitions_list']
     ordering = ['-competitions__event__starts']
+    list_filter = [HasCompetitionFilter, HasEventImageFilter, 'competitions__event__starts']
+
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
+    form = EventAdminForm
     ordering = ['-starts']
     date_hierarchy = 'starts'
     list_display = [ "name", "starts", "ends" ]
