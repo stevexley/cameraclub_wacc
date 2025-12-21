@@ -75,27 +75,33 @@
                     <div class="card text-center">
                         <div class="card-header">
                           <h3>Competitions</h3>
-                          <ul class="nav nav-tabs card-header-tabs" role="tablist">
-                            {% for comp in comps %}
-                                {% if forloop.first %}
-                                <button class="nav-link active" id="{{ comp.type|slugify }}-tab" data-bs-toggle="tab" data-bs-target="#{{comp.type|slugify }}" type="button" role="tab" aria-controls="{{ comp.type|slugify }}" aria-selected="true">{{ comp.type }}</button>
-                                {% else %}
-                                <button class="nav-link" id="{{ comp.type|slugify }}-tab" data-bs-toggle="tab" data-bs-target="#{{comp.type|slugify }}" type="button" role="tab" aria-controls="{{ comp.type|slugify }}" aria-selected="false">{{ comp.type }}</button>
-                                {% endif %}
-                            {% endfor %}
-                          </ul>
+                            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                                {% for comp in comps %}
+                                    <button
+                                        class="nav-link {% if forloop.first %}active{% endif %}"
+                                        id="comp-{{ comp.id }}-tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#comp-{{ comp.id }}"
+                                        type="button"
+                                        role="tab"
+                                        aria-controls="comp-{{ comp.id }}"
+                                        aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">
+                                        {{ comp.type }}
+                                    </button>
+                                {% endfor %}
+                            </ul>
                         </div>
                         <div class="card-body tab-content" id="nav-tabContent">
                         {% for competition in comps %}
                             {% if forloop.first %}
-                            <div class="tab-pane fade show active" id="{{ competition.type|slugify }}" role="tabpanel" aria-labelledby="{{ competition.type|slugify }}-tab">
+                            <div class="tab-pane fade show active" id="comp-{{ competition.id }}" role="tabpanel" aria-labelledby="comp-{{ competition.id }}-tab">
                             {% else %}
-                            <div class="tab-pane fade" id="{{ competition.type|slugify }}" role="tabpanel" aria-labelledby="{{ competition.type|slugify }}-tab">
+                            <div class="tab-pane fade" id="comp-{{ competition.id }}" role="tabpanel" aria-labelledby="comp-{{ competition.id }}-tab">
                             {% endif %}
                             {% comment %} if there are awards and the user is a current member {% endcomment %}
                             {% if user.person.member.current %}
-                            {% if competition.award_set.all %}
-                                {% if judge_awards.all %}
+
+                                {% if competition.judge_awards %}
                                   <div class="col">
                                     <h3>Judge's Awards</h3>
                                     {% if competition.judge %}<h4>Awarded by {{ competition.judge }}</h4>{% endif %}
@@ -106,18 +112,17 @@
                                         <th scope="col">Author</th>
                                       </thead>
                                       <tbody>
-                                        {% for award in judge_awards %}
-                                            {% if award.competition == competition %}
+                                        {% for award in competition.judge_awards %}
                                           <tr>
                                             <td>{{ award.type.name }}</td>
                                             <td>{{ award.image.title }}</td>
                                             <td>{{ award.image.author }}</td>
                                           </tr>
-                                            {% endif %}
                                         {% endfor %}
                                       </tbody>
                                     </table>
                                   {% else %}
+                                  <div class="col">
                                     <h4>No Judge's Awards</h4>
                                   </div>
                                 {% endif %}
@@ -125,7 +130,7 @@
                                   <a class="btn btn-primary btn-block mb-2"
                                      href="{% url 'edit_judge_awards' competition.id %}">Edit Judge Awards</a>
                                 {% endif %}
-                                {% if member_awards.all %}
+                                {% if competition.member_awards %}
                                     <div class="col">
                                       <h3>Member's Awards</h3>
                                       <table class="table table-hover wacc-table">
@@ -135,14 +140,12 @@
                                           <th scope="col">Author</th>
                                         </thead>
                                         <tbody>
-                                          {% for award in member_awards %}
-                                          {% if award.competition == competition %}
+                                          {% for award in competition.member_awards %}
                                             <tr>
                                               <td>{{ award.type.name }}</td>
                                               <td>{{ award.image.title }}</td>
                                               <td>{{ award.image.author }}</td>
                                             </tr>
-                                            {% endif %}
                                           {% endfor %}
                                         </tbody>
                                       </table>
@@ -150,6 +153,7 @@
                                 {% else %}
                                     <div class="col">
                                         <h4>No Members' Awards</h4>
+                                    </div>
                                 {% endif %}
                                     {% if perms.main.change_competition %}
                                         <a class="btn btn-primary btn-block"
@@ -159,22 +163,21 @@
                                     {% endif %}
                                 </div>
                             {% endif %}
-                            {% endif %}
                             {% comment %} if the comp has any images uploaded {% endcomment %}
-                            {% if competition.images.all %}
+                            {% if competition.awarded_images %}
                             </br>
-                            {% if 'Open' or 'End of Year' in competition.type.type %}
+                            {% if 'Open' in competition.type.type or 'End of Year' in competition.type.type %}
                                 <h4>{{ competition.type }} Awarded Images:</h4>
                             {% else %}
                                 <h4>{{ competition.type }} (Subject: {{ competition.subject }}) Awarded Images:</h4>
                             {% endif %}
                             <ul class="image-gallery">
-                                {% for image in competition.images.all %}
-                                    {% if image.award_set.all %}
-                                    {% if image.photo %}
-                                        {% include "main/includes/gallery_items.html" %}
-                                    {% endif %}
-                                    {% endif %}
+                                {% for image in competition.awarded_images %}
+                                {% if image.photo %}
+                                    {% include "main/includes/gallery_items.html" %}
+                                {% endif %}
+                                {% empty %}
+                                    <li>No awarded images</li>
                                 {% endfor %}
                             </ul>
                         {% endif %}

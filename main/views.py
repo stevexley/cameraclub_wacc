@@ -13,7 +13,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormMixin
 from django.views.generic import CreateView, UpdateView, TemplateView, FormView
 from django.forms import inlineformset_factory
-from django.db.models import Sum, Max, Min, OuterRef, Subquery, Q
+from django.db.models import Sum, Max, Min, OuterRef, Subquery, Q, Prefetch
 
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
     Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter, Resource
@@ -223,79 +223,184 @@ def generate_pdf_thumbnail(pdf_path, thumbnail_path):
 
     # generate_pdf_thumbnail(pdf_path, thumbnail_path)
 
+# class EventDetailView(DetailView):
+#     model = Event
+#     template_name = 'main/new_event_detail.html'
+    
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context['comps'] = Competition.objects.filter(event = context['object'])
+#         context['subject'] = Subject.objects.filter(competition__event = context['object'],
+#                                                     competition__type__type__contains = 'Set Digital').first()
+#         context['judge'] = Judge.objects.filter(competition__event = context['object']).first()
+#         context['user'] = self.request.user
+#         context['galleries'] = Gallery.objects.filter(event = context['object'])
+#         context['judge_awards'] = []
+#         context['member_awards'] = []
+#         context['comp_images'] = []
+#         user_images = Image.objects.none()
+
+#         # get gallery images by gallery and sort by author
+#         context['gallery_images_by_gallery'] = {
+#             gallery: Image.objects.filter(galleries=gallery).order_by('author')
+#             for gallery in context['galleries']
+#         }
+
+#         # if no comps don't try to count votes or get awards
+#         comp_images = Image.objects.filter(competitions__in = context['comps'])
+#         if not comp_images:
+#             return context
+#         for comp in context['comps']:
+#             try:
+#                 user_images = Image.objects.filter(author = self.request.user.person,
+#                                                                         competitions = comp
+#                                                                         ) | user_images
+#             except:
+#                 pass
+
+#             comp_member_awards = None
+#             comp_member_awards = Award.objects.filter(competition__id = comp.id,
+#                                                             type__awarded_by__members = True
+#                                                             ).order_by('-type__points')
+#             if context['member_awards']:
+#                 context['member_awards'] = context['member_awards'] | comp_member_awards
+#             else:
+#                 context['member_awards'] = comp_member_awards
+#             '''if there are no member awards, count the votes and create the awards.'''
+#             if not comp_member_awards and comp.members_vote:
+#                 '''check to make sure voting has closed.
+#                 If it has closed count the votes, create the awards and add them to the context'''
+#                 if timezone.make_naive(comp.judging_closes) < timezone.make_naive(timezone.now()):
+#                     print("Before try")
+#                     # try:
+#                     count_votes(comp)
+#                     comp_member_awards = Award.objects.filter(competition__id = comp.id,
+#                                                         type__awarded_by__members = True
+#                                                         ).order_by('-type__points')
+                    
+#                     if context['member_awards']:
+#                         context['member_awards'] = context['member_awards'] | comp_member_awards
+#                     else:
+#                         context['member_awards'] = comp_member_awards
+#                     # except:
+#                     #     pass            
+#             comp_judge_awards = Award.objects.filter(competition__id = comp.id,
+#                                                             type__awarded_by__judge = True
+#                                                             ).order_by('-type__points')
+#             if context['judge_awards']:
+#                 context['judge_awards'] = context['judge_awards'] | comp_judge_awards
+#             else:
+#                 context['judge_awards'] = comp_judge_awards
+#         if user_images:
+#             context['user_images'] = user_images
+#         for comp in context['comps']:
+#             comp.has_entries = any(img.competitions.filter(id=comp.id).exists() for img in user_images)
+#             comp.has_one_entry_rule = comp.type.rules.filter(rule="One Entry").exists()
+            
+#         return context
 class EventDetailView(DetailView):
     model = Event
     template_name = 'main/new_event_detail.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['comps'] = Competition.objects.filter(event = context['object'])
-        context['subject'] = Subject.objects.filter(competition__event = context['object'],
-                                                    competition__type__type__contains = 'Set Digital').first()
-        context['judge'] = Judge.objects.filter(competition__event = context['object']).first()
+
+        event = context['object']
+
+        context['comps'] = Competition.objects.filter(event=event)
+
+        context['subject'] = Subject.objects.filter(
+            competition__event=event,
+            competition__type__type__contains='Set Digital'
+        ).first()
+
+        context['judge'] = Judge.objects.filter(
+            competition__event=event
+        ).first()
+
         context['user'] = self.request.user
-        context['galleries'] = Gallery.objects.filter(event = context['object'])
-        context['judge_awards'] = []
-        context['member_awards'] = []
-        context['comp_images'] = []
+        context['galleries'] = Gallery.objects.filter(event=event)
+
         user_images = Image.objects.none()
 
-        # get gallery images by gallery and sort by author
+        # ------------------------------
+        # Gallery images by gallery
+        # ------------------------------
         context['gallery_images_by_gallery'] = {
             gallery: Image.objects.filter(galleries=gallery).order_by('author')
             for gallery in context['galleries']
         }
 
-        # if no comps don't try to count votes or get awards
-        comp_images = Image.objects.filter(competitions__in = context['comps'])
-        if not comp_images:
-            return context
+        # ------------------------------
+        # Loop over competitions
+        # ------------------------------
         for comp in context['comps']:
+
+            # --------------------------
+            # User images for this comp
+            # --------------------------
             try:
-                user_images = Image.objects.filter(author = self.request.user.person,
-                                                                        competitions = comp
-                                                                        ) | user_images
-            except:
+                user_images |= Image.objects.filter(
+                    author=self.request.user.person,
+                    competitions=comp
+                )
+            except Exception:
                 pass
-            comp_member_awards = None
-            comp_member_awards = Award.objects.filter(competition__id = comp.id,
-                                                            type__awarded_by__members = True
-                                                            ).order_by('-type__points')
-            if context['member_awards']:
-                context['member_awards'] = context['member_awards'] | comp_member_awards
-            else:
-                context['member_awards'] = comp_member_awards
-            '''if there are no member awards, count the votes and create the awards.'''
-            if not comp_member_awards:
-                '''check to make sure voting has closed.
-                If it has closed count the votes, create the awards and add them to the context'''
-                if timezone.make_naive(comp.judging_closes) < timezone.make_naive(timezone.now()):
-                    print("Before try")
-                    # try:
-                    count_votes(comp)
-                    comp_member_awards = Award.objects.filter(competition__id = comp.id,
-                                                        type__awarded_by__members = True
-                                                        ).order_by('-type__points')
-                    
-                    if context['member_awards']:
-                        context['member_awards'] = context['member_awards'] | comp_member_awards
-                    else:
-                        context['member_awards'] = comp_member_awards
-                    # except:
-                    #     pass            
-            comp_judge_awards = Award.objects.filter(competition__id = comp.id,
-                                                            type__awarded_by__judge = True
-                                                            ).order_by('-type__points')
-            if context['judge_awards']:
-                context['judge_awards'] = context['judge_awards'] | comp_judge_awards
-            else:
-                context['judge_awards'] = comp_judge_awards
+
+            # --------------------------
+            # Awards per comp 
+            # --------------------------
+            
+            for comp in context['comps']:
+                comp.judge_awards = Award.objects.filter(
+                    competition=comp,
+                    type__awarded_by__judge=True
+                )
+
+                comp.member_awards = Award.objects.filter(
+                    competition=comp,
+                    type__awarded_by__members=True
+                )
+
+                if not comp.member_awards and comp.members_vote:
+                    if timezone.make_naive(comp.judging_closes) < timezone.make_naive(timezone.now()):
+                        count_votes(comp)
+                        comp.member_awards = Award.objects.filter(
+                            competition=comp,
+                            type__awarded_by__members=True
+                        ).order_by('-type__points')
+            # comp_judge_awards = Award.objects.filter(
+            #     competition=comp,
+            #     type__awarded_by__judge=True
+            # ).order_by('-type__points')
+
+            # context['judge_awards'] |= comp_judge_awards
+
+            # AWARDED IMAGES FOR THIS COMPETITION
+                comp.awarded_images = (
+                    Image.objects
+                    .filter(
+                        award__type__display_image=True,
+                        award__competition=comp,
+                    )
+                    .distinct()
+                )
+
+        # ------------------------------
+        # User images flags
+        # ------------------------------
         if user_images:
             context['user_images'] = user_images
-        for comp in context['comps']:
-            comp.has_entries = any(img.competitions.filter(id=comp.id).exists() for img in user_images)
-            comp.has_one_entry_rule = comp.type.rules.filter(rule="One Entry").exists()
-            
+
+            for comp in context['comps']:
+                comp.has_entries = user_images.filter(
+                    competitions=comp
+                ).exists()
+
+                comp.has_one_entry_rule = comp.type.rules.filter(
+                    rule="One Entry"
+                ).exists()
+
         return context
 
 def remove_entry(request, comp_id, img_id):
