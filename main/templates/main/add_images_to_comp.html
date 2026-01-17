@@ -1,4 +1,6 @@
 {% extends "main/base.html" %}
+{% load print_extras %}
+
 {% block content %}
     <div class="container">
         <h1>Images for {{ competition }}</h1>
@@ -11,10 +13,17 @@
                 {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
                 {% for field in form.visible_fields %}
                     <div class="mb-3">
-                        {% if field.name == 'print' %}<label class="form-check-label mr-5">{{ field.label }}</label>{% endif %}
                         {% if field.errors %}
                             <div class="form-control is-invalid">{{ field }}</div>
                             <div id="{{ field.name }}Feedback" class="invalid-feedback">{{ field.errors }}</div>
+                        {% elif field.name == 'print' %}
+                            <label class="form-check-label mr-5">{{ field.label }}</label>
+                            {% if field.value == True %}
+                                <input type="checkbox" checked disabled>
+                            {% else %}
+                                <input type="checkbox" disabled>
+                            {% endif %}
+                            {{ field }}
                         {% else %}
                             {{ field }}
                         {% endif %}
@@ -28,8 +37,31 @@
             </div>
         </div>
         
+        <div class="card mt-3">
+            <div class="card-header"><h3>Entries</h3></div>
+            <div class="card-body">
+                <table class="table">
+                <tr>
+                    <th>Number</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                </tr>
+                {% for image in images %}
+                <tr>
+                    <td>{% with entry=image|print_entry_for:competition %}
+                        {{ entry.number }}
+                        {% endwith %}</td>
+                    <td>{{ image.title }}</td>
+                    <td>{{ image.author }}</td>
+                </tr>
+                {% endfor %}
+                </table>
+                <a class="btn btn-primary mb-1" href="{% url 'competition_edit_prints' pk=competition.id %}" >Edit Entries</a><br/>
+            </div>
+        </div>
+
         <!-- Select existing images -->
-        <div class="card my-3">
+        <div class="card mt-3">
             <div class="card-header"><h3>Add Existing Images</h3></div>
             <div class="card-body">
                 <form method="post">
@@ -39,10 +71,6 @@
                 </form>
             </div>
         </div>
-
-        <ol class="list-group list-group-numbered">
-            {% for image in images %}<li class="list-group-item">{{ image.title }} by {{ image.author }}</li>{% endfor %}
-        </ol>
     </div>
 {% endblock content %}
 {% block scripts %}

@@ -1,0 +1,43 @@
+{% extends "main/base.html" %}
+{% block content %}
+  <div class="container">
+    <h1>Edit print images – {{ competition }}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        {% if formset.non_form_errors %}
+        <div class="alert alert-danger">
+            {{ formset.non_form_errors }}
+        </div>
+        {% endif %}
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Number</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for form in formset %}
+                    {% if form.errors %}
+                        <tr class="table-danger">
+                    {% else %}
+                        <tr>
+                    {% endif %}
+                        <td>{{ form.id }}{{ form.number }}</td>
+                        <td>{{ form.title }}</td>
+                        <td>{{ form.author }}</td>
+                        <td>{{ form.DELETE }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button class="btn btn-primary">Save Changes</button>
+    </form>
+  </div>
+{% endblock %}

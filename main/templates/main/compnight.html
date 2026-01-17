@@ -10,13 +10,16 @@
         {% endif %}
           {% if 'rint' in comp.type.type %}
           <a class="btn btn-outline-primary mb-1" href="{% url 'competition_add_images' comp.id %}" >Add Images - {{ comp.type }}</a><br/>
+          <a class="btn btn-primary mb-1" href="{% url 'competition_edit_prints' pk=comp.id %}" >Edit Entries - {{ comp.type }}</a><br/>
+          <a class="btn btn-primary mb-1" href="{% url 'print_paper_voting' %}" >Add Paper Vote</a><br/>
+          <a class="btn btn-primary mb-1" href="{% url 'printvotetally' competition_id=comp.id %}" >Count Print Votes - {{ comp.type }}</a><br/>
           {% else %}
           <a class="btn btn-outline-primary mb-1" href="{% url 'slideshow' comp.id %}" >{{ comp.type }} Preview</a><br/>
-          <a class="btn btn-outline-primary" href="{% url 'judge_slideshow' comp.id %}" >{{ comp.type }} Judge's Comments</a><br/>
+          <a class="btn btn-outline-primary mb-1" href="{% url 'judge_slideshow' comp.id %}" >{{ comp.type }} Judge's Comments</a><br/>
           {% endif %}
-          <a class="badge rounded-pill bg-primary text-light"
+          <a class="btn btn-primary mb-1"
              href="{% url 'edit_judge_awards' comp.id %}">Edit Judge Awards - {{ comp.type }}</a>
-          <a class="badge rounded-pill bg-primary text-light"
+          <a class="btn btn-primary mb-1"
              href="{% url 'edit_member_awards' comp.id %}">Edit Member Awards - {{ comp.type }}</a>
           </div>
         {% endfor %}

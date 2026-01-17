@@ -37,7 +37,7 @@ def generate_thumbnail(pdf_path, thumb_path, size=(200, 300)):
 class Newsletter(models.Model):
     '''Club Newsletters (issued monthly)'''
     id = models.AutoField(primary_key=True)
-    issue_date = models.DateTimeField(default=datetime.now())
+    issue_date = models.DateTimeField(default=timezone.now)
     file = models.FileField(upload_to='files/news/')
     thumb = models.ImageField(upload_to='files/news/thum', blank=True, null=True)
     
@@ -371,30 +371,57 @@ class Vote(models.Model):
     vote = models.ForeignKey(VoteOption, on_delete=models.PROTECT)
     image = models.ForeignKey(Image, on_delete=models.CASCADE)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
-    voter = models.ForeignKey(Member, on_delete=models.CASCADE)
+    voter = models.ForeignKey(Member, null=True, blank=True, on_delete=models.CASCADE)
     
     def __str__(self):
-        return self.competition.event.name + ": " + self.competition.type.type + " (" + self.competition.subject.subject + ")" + ": " + self.vote.option + " to " + self.image.title + ": " + self.image.author.firstname + " " + self.image.author.surname + " from " + self.voter.person.firstname + " " + self.voter.person.surname
-
+        if self.voter:
+            return self.competition.event.name + ": " + self.competition.type.type + " (" + self.competition.subject.subject + ")" + ": " + self.vote.option + " to " + self.image.title + ": " + self.image.author.firstname + " " + self.image.author.surname + " from " + self.voter.person.firstname + " " + self.voter.person.surname
+        else:
+            return self.competition.event.name + ": " + self.competition.type.type + " (" + self.competition.subject.subject + ")" + ": " + self.vote.option + " to " + self.image.title + ": " + self.image.author.firstname + " " + self.image.author.surname + " as paper vote."
+        
 class PrintImage(models.Model):
     '''A record of the numbers given to images in print competitions to allow matching votes to images'''
     id = models.AutoField(primary_key=True)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
     number = models.SmallIntegerField()
-    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    image = models.ForeignKey(
+        Image,
+        on_delete=models.CASCADE,
+        related_name='print_entries'
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['competition', 'image'],
+                name='unique_print_per_competition'
+            )
+        ]
 
 class PrintVote(models.Model):
     '''A vote in a print Competition, will not be linked to an Image object at time of voting, just number.
     If done by member add member, but can be added manually without Member'''
     id = models.AutoField(primary_key=True)
-    vote = models.ForeignKey(VoteOption, on_delete=models.PROTECT)
-    number = models.SmallIntegerField()
-    image = models.ForeignKey(Image, null=True, blank=True, on_delete=models.CASCADE)
+    first_place = models.SmallIntegerField()
+    second_place = models.SmallIntegerField()
+    third_place = models.SmallIntegerField()
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
     voter = models.ForeignKey(Member, null=True, blank=True, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["competition", "voter"],
+                condition=~models.Q(voter__isnull=True),
+                name="unique_vote_per_member_per_competition",
+            )
+        ]
     
     def __str__(self):
-        return self.competition.event.name + ": " + self.competition.type.type + " (" + self.competition.subject.subject + ")" + ": " + self.vote.option + " to " + str(self.number)
+        if self.voter:
+            return self.competition.event.name + ": " + self.competition.type.type + " (" + self.competition.subject.subject + ") by " + str(self.voter.person)
+        else:
+            return self.competition.event.name + ": " + self.competition.type.type + " (" + self.competition.subject.subject + ") paper vote"
 
 class ResourceGroup(models.Model):
     id = models.AutoField(primary_key=True)

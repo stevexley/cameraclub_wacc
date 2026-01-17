@@ -94,6 +94,22 @@ class MainGalleryView(ListView):
         images = images.exclude(competitions__display_awarded=False)[:200]
 
         return images
+    
+    # context object to allow showing of print voting button
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['print_voting'] = False
+        now = timezone.now()
+
+        competitions = Competition.objects.filter(
+            event__starts__lte=now,
+            event__ends__gte=now,
+            type__type__icontains = "print"
+            )
+        if competitions:
+            context['print_voting'] = True
+    
+        return context
 
 class AboutUsView(View):
     '''This view just selects the Blub object that contains
@@ -223,81 +239,7 @@ def generate_pdf_thumbnail(pdf_path, thumbnail_path):
 
     # generate_pdf_thumbnail(pdf_path, thumbnail_path)
 
-# class EventDetailView(DetailView):
-#     model = Event
-#     template_name = 'main/new_event_detail.html'
-    
-#     def get_context_data(self, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context['comps'] = Competition.objects.filter(event = context['object'])
-#         context['subject'] = Subject.objects.filter(competition__event = context['object'],
-#                                                     competition__type__type__contains = 'Set Digital').first()
-#         context['judge'] = Judge.objects.filter(competition__event = context['object']).first()
-#         context['user'] = self.request.user
-#         context['galleries'] = Gallery.objects.filter(event = context['object'])
-#         context['judge_awards'] = []
-#         context['member_awards'] = []
-#         context['comp_images'] = []
-#         user_images = Image.objects.none()
 
-#         # get gallery images by gallery and sort by author
-#         context['gallery_images_by_gallery'] = {
-#             gallery: Image.objects.filter(galleries=gallery).order_by('author')
-#             for gallery in context['galleries']
-#         }
-
-#         # if no comps don't try to count votes or get awards
-#         comp_images = Image.objects.filter(competitions__in = context['comps'])
-#         if not comp_images:
-#             return context
-#         for comp in context['comps']:
-#             try:
-#                 user_images = Image.objects.filter(author = self.request.user.person,
-#                                                                         competitions = comp
-#                                                                         ) | user_images
-#             except:
-#                 pass
-
-#             comp_member_awards = None
-#             comp_member_awards = Award.objects.filter(competition__id = comp.id,
-#                                                             type__awarded_by__members = True
-#                                                             ).order_by('-type__points')
-#             if context['member_awards']:
-#                 context['member_awards'] = context['member_awards'] | comp_member_awards
-#             else:
-#                 context['member_awards'] = comp_member_awards
-#             '''if there are no member awards, count the votes and create the awards.'''
-#             if not comp_member_awards and comp.members_vote:
-#                 '''check to make sure voting has closed.
-#                 If it has closed count the votes, create the awards and add them to the context'''
-#                 if timezone.make_naive(comp.judging_closes) < timezone.make_naive(timezone.now()):
-#                     print("Before try")
-#                     # try:
-#                     count_votes(comp)
-#                     comp_member_awards = Award.objects.filter(competition__id = comp.id,
-#                                                         type__awarded_by__members = True
-#                                                         ).order_by('-type__points')
-                    
-#                     if context['member_awards']:
-#                         context['member_awards'] = context['member_awards'] | comp_member_awards
-#                     else:
-#                         context['member_awards'] = comp_member_awards
-#                     # except:
-#                     #     pass            
-#             comp_judge_awards = Award.objects.filter(competition__id = comp.id,
-#                                                             type__awarded_by__judge = True
-#                                                             ).order_by('-type__points')
-#             if context['judge_awards']:
-#                 context['judge_awards'] = context['judge_awards'] | comp_judge_awards
-#             else:
-#                 context['judge_awards'] = comp_judge_awards
-#         if user_images:
-#             context['user_images'] = user_images
-#         for comp in context['comps']:
-#             comp.has_entries = any(img.competitions.filter(id=comp.id).exists() for img in user_images)
-#             comp.has_one_entry_rule = comp.type.rules.filter(rule="One Entry").exists()
-            
-#         return context
 class EventDetailView(DetailView):
     model = Event
     template_name = 'main/new_event_detail.html'
@@ -722,6 +664,117 @@ class MemberVotingView(LoginRequiredMixin, View):
         except (Competition.DoesNotExist, VoteOption.DoesNotExist):
             return redirect('events_now', year=datetime.now().year )
 
+class PrintVotingView(LoginRequiredMixin, View):
+    login_url = "accounts/login/"
+
+    def get(self, request):
+        now = timezone.now()
+
+        competitions = Competition.objects.filter(
+            event__starts__lte=now,
+            event__ends__gte=now,
+            type__type__icontains = "print"
+            )
+
+        voter = request.user.person.member  
+
+        forms = []
+        for comp in competitions:
+            already_voted = PrintVote.objects.filter(
+                competition=comp,
+                voter=voter
+            ).exists()
+
+            if not already_voted:
+                form = PrintVoteForm(initial={
+                    "competition_id": comp.id,
+                    "voter_id": voter.id,
+                })
+            else:
+                form = None  # no form, user already voted
+
+            forms.append({
+                "competition": comp,
+                "form": form,
+                "already_voted": already_voted,
+            })
+
+        return render(
+            request,
+            "main/print_voting_form.html",
+            {"forms": forms,
+            "mode": "member",},
+        )
+
+    def post(self, request):
+        form = PrintVoteForm(
+            request.POST,
+            require_voter=True
+        )
+
+        if form.is_valid():
+            PrintVote.objects.create(
+                competition_id=form.cleaned_data["competition_id"],
+                voter_id=form.cleaned_data["voter_id"],
+                first_place=form.cleaned_data["first_place"],
+                second_place=form.cleaned_data["second_place"],
+                third_place=form.cleaned_data["third_place"],
+            )
+
+            return redirect("print_voting")
+
+        # If invalid, re-render page (usually with errors)
+        return self.get(request)
+    
+class PrintPaperVotingView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = "main.add_printvote"
+
+    def get(self, request):
+        now = timezone.now()
+
+        competitions = Competition.objects.filter(
+            event__starts__lte=now,
+            event__ends__gte=now,
+            type__type__icontains = "print"
+            )
+
+        forms = []
+        for comp in competitions:
+            form = PrintVoteForm(initial={
+                "competition_id": comp.id
+            })
+            
+            forms.append({
+                "competition": comp,
+                "form": form,
+            })
+
+        return render(
+            request,
+            "main/print_voting_form.html",
+            {"forms": forms,
+            "mode": "paper",},
+        )
+
+    def post(self, request):
+        form = PrintVoteForm(
+            request.POST,
+            require_voter=False
+        )
+
+        if form.is_valid():
+            PrintVote.objects.create(
+                competition_id=form.cleaned_data["competition_id"],
+                voter=None,
+                first_place=form.cleaned_data["first_place"],
+                second_place=form.cleaned_data["second_place"],
+                third_place=form.cleaned_data["third_place"],
+            )
+            messages.success(request, "Paper vote recorded")
+            return redirect("print_paper_voting")
+
+        return self.get(request)
+
 def user_has_permission(user):
     return user.has_perm("main.change_competition")
 
@@ -737,19 +790,50 @@ def user_gallery_permission(user, gallery_pk):
         passes = True
     return passes
 
+def votes_from_printvotes(competition):
+    ballots = PrintVote.objects.filter(competition=competition)
+
+    for ballot in ballots:
+        for option, number in [
+            ("1st", ballot.first_place),
+            ("2nd", ballot.second_place),
+            ("3rd", ballot.third_place),
+        ]:
+            try:
+                image = PrintImage.objects.get(
+                    competition=competition,
+                    number=number
+                ).image
+
+                Vote.objects.create(
+                    vote=VoteOption.objects.get(option=option),
+                    image=image,
+                    competition=competition,
+                    voter=ballot.voter,
+                )
+            except PrintImage.DoesNotExist:
+                continue
+
+    count_votes(competition=competition)
+
+def print_vote_tally_view(request, competition_id):
+    competition = get_object_or_404(Competition, id=competition_id)
+
+    votes_from_printvotes(competition)
+
+    messages.success(request, "Print votes tallied successfully")
+    return redirect("compnight")
+
 def count_votes(competition):
 
     # Get all the images for the given competition
     images = competition.images.all()
 
     # Calculate total points for each image in the competition
-    # 2025-09-21 added Printvotes for voting on the night
     image_points = {}
     for image in images:
         total_points = image.vote_set.aggregate(total_points=Sum('vote__points'))['total_points'] or 0
-        total_points += image.printvote_set.aggregate(total_points=Sum('vote__points'))['total_points'] or 0
         three_point_count = image.vote_set.filter(vote__points=3).count() or 0
-        three_point_count += image.printvote_set.filter(vote__points=3).count() or 0
         image_points[image] = (total_points, three_point_count)
     
     # Sort images based on total points and 3 point count in descending order
@@ -1025,12 +1109,72 @@ class AddImagesToCompetitionView(FormMixin, ListView):
     def form_valid(self, form):
         competition = get_object_or_404(Competition, pk=self.kwargs.get('pk'))
         image = form.save(commit=False)
+        if "print" in competition.type.type.lower():
+            image.print = True
         image.save()
         competition.images.add(image)
-        return super().form_valid(form)
+        # if it's a print image being added to a comp, create PrintImage object for voting
+        # add numbers sequentially, a seperate form will be used to correct any chganges
+        if image.print:
+            max_number = (
+                PrintImage.objects
+                .filter(competition=competition)
+                .aggregate(max_num=Max('number'))
+            )['max_num'] or 0
+            PrintImage.objects.create(
+                competition = competition,
+                number = max_number + 1,
+                image = image
+            )
+        self.object = image
+        return redirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse('competition_add_images', kwargs={'pk': self.kwargs.get('pk')})
+
+class PrintImageBulkEditView(View):
+    template_name = "main/printimage_edit.html"
+
+    def get(self, request, pk):
+        competition = get_object_or_404(Competition, id=pk)
+
+        formset = PrintImageFormSet(
+            queryset=PrintImage.objects
+                .filter(competition=competition)
+                .select_related('image', 'image__author')
+                .order_by('number'),
+            competition=competition
+        )
+
+        return render(request, self.template_name, {
+            "competition": competition,
+            "formset": formset,
+        })
+
+    def post(self, request, pk):
+        competition = get_object_or_404(Competition, id=pk)
+
+        formset = PrintImageFormSet(
+            request.POST,
+            queryset=PrintImage.objects
+                .filter(competition=competition)
+                .select_related('image'),
+            competition = competition
+        )
+        print("FORMSET VALID:", formset.is_valid())
+        print("FORMSET ERRORS:", formset.errors)
+        print("NON FORM ERRORS:", formset.non_form_errors())
+        
+        if formset.is_valid():
+            formset.save()
+            messages.success(request, "Print images updated")
+            return redirect("compnight")
+
+        return render(request, self.template_name, {
+            "competition": competition,
+            "formset": formset,
+        })
+
 
 class JudgeAwardUpdateView(PermissionRequiredMixin, TemplateView):
     template_name = 'main/award_entries.html'

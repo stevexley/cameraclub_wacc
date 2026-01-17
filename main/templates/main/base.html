@@ -11,19 +11,18 @@
     <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
     <!-- CSS (stable release) -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <link href="{% static 'css/select2.min.css' %}" rel="stylesheet" />
     <!-- Make sure jQuery comes first -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="{% static 'js/jquery.min.js' %}"></script>
     <!-- JS (stable release) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="{% static 'js/select2.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
     <script src="{% static 'admin/js/core.js' %}"></script>
   </head>
-  <body>
+  <body class="d-flex flex-column min-vh-100">
     {% now "Y" as this_year %}
-    <div class="container-fluid">
       {% block navbar %}
-        <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
           <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'main-gallery' %}">
               <img src="{% static "WACC_icon.png" %}"
@@ -86,6 +85,10 @@
               {% if user.person.member %}
                 <a class="btn btn-outline-primary mx-2 text-nowrap"
                   href="{% url 'profile' user.person.member.id %}">Hi {{ user.person.firstname }}</a>
+                  {% if print_voting %}
+                  <a class="btn btn-outline-success mx-2 text-nowrap"
+                    href="{% url 'print_voting' %}">Print Voting</a>
+                  {% endif %}
               {% endif %}
                 <a class="btn btn-secondary"
                    href="{% url 'logout' %}">Logout</a>
@@ -125,13 +128,12 @@
         {% endfor %}
       </div>
     {% endif %}
-    <div class="container-fluid pt-5 my-5">
-      <div class="pt-5 lg-pt-0">
-        {% block content %}
-        {% endblock content %}
-      </div>
+    <main class="flex-grow-1">
+      {% block content %}
+      {% endblock content %}
+    <main>
       <div class="container my-3">
-        <div class="d-flex justify-content-center fixed-bottom bg-white pt-1">
+        <div class="d-flex justify-content-center sticky-bottom bg-white pt-1">
           <p class="text-center">
             All images displayed on this site are copyright of WA Camera Club members and may not be
             used for any purpose without prior permission of the photographer in question.
@@ -139,7 +141,6 @@
         </div>
       </div>
     </div>
-  </div>
 </div>
 
 <script src={% static 'js/bootstrap.bundle.min.js' %}></script>

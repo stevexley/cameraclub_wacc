@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from django import forms
-from django.forms import formset_factory, BaseFormSet, BaseInlineFormSet, inlineformset_factory
+from django.forms import formset_factory, BaseModelFormSet, BaseInlineFormSet, modelformset_factory
 from django.forms.widgets import SplitDateTimeWidget
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from .models import *
@@ -115,8 +115,7 @@ class ImageForm(forms.ModelForm):
             visible.field.widget.attrs['class'] = 'form-control'
             visible.field.widget.attrs['placeholder'] = visible.field.label
             visible.field.widget.attrs['aria-describedby'] = visible.name + 'Feedback'
-        self.fields['print'].widget.attrs['class'] = 'form-check-input form-check-inline'
-        self.fields['print'].widget.attrs['disabled'] = True
+        self.fields['print'].widget.attrs['hidden'] = True
         self.fields['photo'].widget.attrs['class'] = 'form-control form-control-lg'
         self.fields['photo'].widget.attrs['id'] = 'fileInput'
         self.fields['author'].empty_label = '-Select Author-'
@@ -139,6 +138,7 @@ class ImageForm(forms.ModelForm):
             title = setTitleCase(title)
         return title
     
+ 
     def clean_photo(self):
         photo = self.cleaned_data.get('photo')
         author = self.cleaned_data.get('author')
@@ -251,6 +251,78 @@ class CompetitionNightSetupForm(forms.Form):
         set_subject = forms.ModelMultipleChoiceField(queryset=Subject.objects.filter(year=datetime.now().year))
     # competition_types = CompetitionType.objects.all()  # Assuming you want all competition types
 
+class PrintImageEditForm(forms.ModelForm):
+    id = forms.IntegerField(widget=forms.HiddenInput)
+    # expose Image fields
+    title = forms.CharField()
+    author = forms.ModelChoiceField(
+        queryset=Member.objects.filter(current=True),
+        required=False
+    )
+
+    class Meta:
+        model = PrintImage
+        fields = ['id', 'number']
+
+    def __init__(self, *args, **kwargs):
+        self.competition = kwargs.pop('competition', None)
+        super().__init__(*args, **kwargs)
+        
+        if self.instance.pk:
+            self.fields['title'].initial = self.instance.image.title
+            self.fields['author'].initial = self.instance.image.author
+
+    def save(self, commit=True):
+        print_image = super().save(commit=False)
+
+        image = print_image.image
+        image.title = self.cleaned_data['title']
+        image.author = self.cleaned_data['author'].person
+
+        if commit:
+            image.save()
+            print_image.save()
+
+        return print_image
+    
+    def clean_number(self):
+        if self.cleaned_data.get('DELETE'):
+            return self.cleaned_data.get('number')
+
+        number = self.cleaned_data['number']
+
+        if not self.competition:
+            return number
+
+        qs = PrintImage.objects.filter(
+            competition=self.competition,
+            number=number
+        ).exclude(pk=self.instance.pk)
+
+        if qs.exists():
+            raise forms.ValidationError(
+                f"Print number {number} already exists in this competition."
+            )
+
+        return number
+
+class BasePrintImageFormSet(BaseModelFormSet):
+    def __init__(self, *args, **kwargs):
+        self.competition = kwargs.pop('competition')
+        super().__init__(*args, **kwargs)
+
+        for form in self.forms:
+            form.competition = self.competition
+
+
+PrintImageFormSet = modelformset_factory(
+    PrintImage,
+    form=PrintImageEditForm,
+    formset=BasePrintImageFormSet,
+    extra=0,
+    can_delete=True
+)
+
 class JudgeAwardForm(forms.Form):
     title = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False)
     author = forms.CharField(widget=forms.TextInput(attrs={'readonly': 'readonly'}), required=False)
@@ -269,6 +341,59 @@ class MemberAwardForm(forms.Form):
     competition_id = forms.IntegerField(widget=forms.HiddenInput())
 
 MemberAwardFormSet = formset_factory(MemberAwardForm, extra=0)
+
+class PrintVoteForm(forms.Form):
+    competition_id = forms.IntegerField(widget=forms.HiddenInput())
+    voter_id = forms.IntegerField(widget=forms.HiddenInput(),
+                                  required=False
+                                  )
+    first_place = forms.IntegerField(label="1st", min_value=1,
+                                     widget=forms.NumberInput(attrs={
+                                        "inputmode": "numeric",
+                                        "pattern": "[0-9]*",
+                                        "class": "vote-input",
+                                    }))
+    second_place = forms.IntegerField(label="2nd", min_value=1,
+                                     widget=forms.NumberInput(attrs={
+                                        "inputmode": "numeric",
+                                        "pattern": "[0-9]*",
+                                        "class": "vote-input",
+                                    }))
+    third_place = forms.IntegerField(label="3rd", min_value=1,
+                                     widget=forms.NumberInput(attrs={
+                                        "inputmode": "numeric",
+                                        "pattern": "[0-9]*",
+                                        "class": "vote-input",
+                                    }))
+
+    def __init__(self, *args, require_voter=True, **kwargs):
+        self.require_voter = require_voter
+        super().__init__(*args, **kwargs)
+
+        if require_voter:
+            self.fields["voter_id"].required = True
+        else:
+            self.fields.pop("voter_id") 
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        first = cleaned_data.get("first_place")
+        second = cleaned_data.get("second_place")
+        third = cleaned_data.get("third_place")
+
+        votes = [first, second, third]
+
+        # Ignore None values (in case fields become optional later)
+        votes = [v for v in votes if v is not None]
+
+        if len(votes) != len(set(votes)):
+            raise ValidationError(
+                "You cannot vote for the same print more than once."
+            )
+
+        return cleaned_data
+
 
 class UserForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):

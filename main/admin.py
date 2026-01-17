@@ -150,6 +150,14 @@ admin.site.register(ResourceGroup)
 class ResourceAdmin(admin.ModelAdmin):
     list_display = [ "__str__", "group", "visibility"]
 
+@admin.register(PrintVote)
+class PrintVoteAdmin(admin.ModelAdmin):
+    date_hierarchy = 'competition__event__starts'
+
 @admin.register(Vote)
 class VoteAdmin(admin.ModelAdmin):
+    date_hierarchy = 'competition__event__starts'
+
+@admin.register(PrintImage)
+class PrintImageAdmin(admin.ModelAdmin):
     date_hierarchy = 'competition__event__starts'

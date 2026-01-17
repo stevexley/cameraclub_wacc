@@ -1,0 +1,106 @@
+{% extends 'main/base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+
+<div class="container">
+    <h1>Print Voting</h1>
+  {% for thing in forms %}
+    <div class="card mb-4">
+      <div class="card-header">
+        <h2>{{ thing.competition.subject.subject }}</h2>
+        <h5 class="text-muted">
+          {{ thing.competition.subject.description }}
+        </h5>
+      </div>
+
+      <div class="card-body">
+        {% if thing.already_voted and mode == "member" %}
+            <div class="alert alert-success">
+            You have already voted for this competition.
+            </div>
+        {% else %}
+        <form method="post" class="print-vote-form">
+          {% csrf_token %}
+
+          {{ thing.form.competition_id }}
+          {% if mode == "member" %}
+            {{ thing.form.voter_id }}
+          {% endif %}
+
+          {% if thing.form.non_field_errors %}
+            <div class="alert alert-danger">
+              {{ thing.form.non_field_errors }}
+            </div>
+          {% endif %}
+          <table>
+          {% for field in thing.form.visible_fields %}
+            <tr>
+              <td>{{ field.label_tag }}</td>
+              <td>{{ field }}</td>
+            </tr>
+            {% for error in field.errors %}
+            <tr>
+              <td colspan="2" class="text-danger small">{{ error }}</td>
+            </tr>
+            {% endfor %}
+          {% endfor %}
+          </table>
+
+          <button type="submit" class="btn btn-primary submit-btn">Save</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <p>No competitions currently open for voting.</p>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll(".print-vote-form").forEach(form => {
+    const submitBtn = form.querySelector(".submit-btn");
+    const inputs = form.querySelectorAll("input[type='number']");
+
+    function checkForm() {
+    let complete = true;
+    inputs.forEach(input => {
+        if (!input.value) {
+        complete = false;
+        }
+    });
+    submitBtn.disabled = !complete;
+    }
+
+    // Initial state (disabled on load)
+    checkForm();
+
+    inputs.forEach(input => {
+      input.addEventListener("input", checkForm);
+    });
+
+    form.addEventListener("submit", () => {
+        submitBtn.disabled = true;
+    });
+});
+</script>
+<script>
+document.querySelectorAll(".print-vote-form").forEach(form => {
+    const inputs = Array.from(form.querySelectorAll(".vote-input"));
+
+    inputs.forEach((input, index) => {
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+
+                if (index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock scripts %}
