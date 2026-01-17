@@ -966,7 +966,8 @@ class CompNightView(PermissionRequiredMixin, ListView):
     context_object_name = 'competitions'
     template_name = 'main/compnight.html'
     queryset = Competition.objects.filter(event__starts__month = datetime.now().month,
-                                          event__starts__year = datetime.now().year )
+                                          event__starts__year = datetime.now().year,
+                                          event__name__icontains = "Competition" )
 
 class CompNightImagesView(PermissionRequiredMixin, DetailView):
     '''Slideshow of images in competition'''
