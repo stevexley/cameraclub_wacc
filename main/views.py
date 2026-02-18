@@ -14,12 +14,13 @@ from django.views.generic.edit import FormMixin
 from django.views.generic import CreateView, UpdateView, TemplateView, FormView
 from django.forms import inlineformset_factory
 from django.db.models import Sum, Max, Min, OuterRef, Subquery, Q, Prefetch
+from django.db.models.functions import Coalesce
 
 from .models import Image, Event, Competition, CompetitionType, Person, Member, User, Blurb, \
     Gallery, VoteOption, Vote, Award, AwardType, Subject, Position, Newsletter, Resource
 from .forms import *
 from .utils import pick_a_pic, get_exif_data
-from datetime import datetime, timedelta
+from datetime import timedelta
 import subprocess
 import calendar
 from collections import defaultdict
@@ -42,7 +43,7 @@ class ProfileView(LoginRequiredMixin, DetailView):
         if oldest_entry_date:
             firstyear =  oldest_entry_date.year
         
-        for year in range(datetime.now().year, (firstyear - 1), -1):
+        for year in range(timezone.now().year, (firstyear - 1), -1):
             entries = {
                 'year': year,
                 'images': Image.objects.filter(author = person,
@@ -142,7 +143,7 @@ class NewslettersView(YearArchiveView):
             try:
                 year = self.kwargs["year"]
             except:
-                year = datetime.now().year
+                year = timezone.now().year
         return year
     
     def get_queryset(self):
@@ -184,7 +185,7 @@ class EventsView(YearArchiveView):
             try:
                 year = self.kwargs["year"]
             except:
-                year = datetime.now().year
+                year = timezone.now().year
         return year
     
     def get_queryset(self):
@@ -297,15 +298,15 @@ class EventDetailView(DetailView):
                 comp.judge_awards = Award.objects.filter(
                     competition=comp,
                     type__awarded_by__judge=True
-                )
+                ).order_by('-type__points')
 
                 comp.member_awards = Award.objects.filter(
                     competition=comp,
                     type__awarded_by__members=True
-                )
+                ).order_by('-type__points')
 
                 if not comp.member_awards and comp.members_vote:
-                    if timezone.make_naive(comp.judging_closes) < timezone.make_naive(timezone.now()):
+                    if comp.judging_closes < timezone.now() and comp.event.starts < timezone.now():
                         count_votes(comp)
                         comp.member_awards = Award.objects.filter(
                             competition=comp,
@@ -325,7 +326,15 @@ class EventDetailView(DetailView):
                         award__type__display_image=True,
                         award__competition=comp,
                     )
-                    .distinct()
+                    .annotate(
+                        total_points=Coalesce(
+                            Sum(
+                                'award__type__points',
+                            ),
+                            0  # treat NULL as 0
+                        )
+                    )
+                    .order_by('-total_points', 'title')
                 )
 
         # ------------------------------
@@ -359,7 +368,7 @@ class UploadEventFileView(PermissionRequiredMixin, SuccessMessageMixin, UpdateVi
     model = Event  
     form_class = EventUploadForm
     template_name = 'main/event_upload_form.html'
-    success_url = '/events/' + str(datetime.now().year) + '#today_bookmark'
+    success_url = '/events/' + str(timezone.now().year) + '#today_bookmark'
     success_message = "Event Updated"
 
     def form_valid(self, form):
@@ -443,7 +452,7 @@ def setup_competition_night(request, event_id):
                                                          type = 'Open Colour Digital')
                 competition2 = Competition.objects.create(
                         subject=Subject.objects.get(subject="Open Colour"),
-                        open_for_entries=datetime.today(),
+                        open_for_entries=timezone.now(),
                         entries_close=event.starts - timedelta(days = 8),
                         open_for_judging=event.starts - timedelta(days = 7),
                         judging_closes=event.ends - timedelta(days = 1),
@@ -458,6 +467,7 @@ def setup_competition_night(request, event_id):
                         subject=Subject.objects.get(subject="Open Mono"),
                         open_for_entries=event.starts,
                         entries_close=event.starts,
+                        open_for_judging=event.starts,
                         judging_closes=event.ends,
                         type=openmonoprint,
                         event=event
@@ -468,7 +478,7 @@ def setup_competition_night(request, event_id):
                                                          type = 'Open Mono Digital')
                 competition2 = Competition.objects.create(
                         subject=Subject.objects.get(subject="Open Mono"),
-                        open_for_entries=datetime.today(),
+                        open_for_entries=timezone.now(),
                         entries_close=event.starts - timedelta(days = 8),
                         open_for_judging=event.starts - timedelta(days = 7),
                         judging_closes=event.ends - timedelta(days = 1),
@@ -494,7 +504,7 @@ def setup_competition_night(request, event_id):
                                                         type = 'Set Digital')
             competition4 = Competition.objects.create(
                     subject=set_subject[0],
-                    open_for_entries=datetime.today(),
+                    open_for_entries=timezone.now(),
                     entries_close=event.starts - timedelta(days = 8),
                     open_for_judging=event.starts - timedelta(days = 7),
                     judging_closes=event.ends - timedelta(days = 1),
@@ -660,9 +670,9 @@ class MemberVotingView(LoginRequiredMixin, View):
                                 )   
                         check = None
             messages.success(request, "Votes lodged")
-            return redirect('events_now', year=datetime.now().year )
+            return redirect('events_now', year=timezone.now().year )
         except (Competition.DoesNotExist, VoteOption.DoesNotExist):
-            return redirect('events_now', year=datetime.now().year )
+            return redirect('events_now', year=timezone.now().year )
 
 class PrintVotingView(LoginRequiredMixin, View):
     login_url = "accounts/login/"
@@ -944,7 +954,7 @@ class CompAwardsView(DetailView):
             '''check to make sure voting has closed.
             If it has closed count the votes, create the awards and add them to the context'''
             competition = context['competition']
-            if competition.judging_closes < datetime.now(timezone.utc):
+            if competition.judging_closes < timezone.now():
                 try:
                     count_votes(competition)
                     context['member_awards'] = Award.objects.filter(competition__id = self.kwargs['pk'],
@@ -965,8 +975,8 @@ class CompNightView(PermissionRequiredMixin, ListView):
     model = Competition
     context_object_name = 'competitions'
     template_name = 'main/compnight.html'
-    queryset = Competition.objects.filter(event__starts__month = datetime.now().month,
-                                          event__starts__year = datetime.now().year,
+    queryset = Competition.objects.filter(event__starts__month = timezone.now().month,
+                                          event__starts__year = timezone.now().year,
                                           event__name__icontains = "Competition" )
 
 class CompNightImagesView(PermissionRequiredMixin, DetailView):
@@ -1515,7 +1525,7 @@ class AnnualTotalsView(PermissionRequiredMixin, ListView):
         try:
             year = self.kwargs["year"]
         except:
-            year = datetime.now().year
+            year = timezone.now().year
         return year
     
     def get_context_data(self, **kwargs):

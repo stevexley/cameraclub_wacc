@@ -10,10 +10,12 @@ from PIL.ExifTags import TAGS
 from nltk.corpus import stopwords
 from itertools import chain
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from .models import Event, Competition, CompetitionType, Award, Image, Rule, Gallery
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import HttpResponse, FileResponse
 from django.contrib import messages
+from django.utils import timezone
 from django.utils.encoding import force_str
 from django.utils.text import slugify
 from django.conf import settings
@@ -146,8 +148,8 @@ def createwaccevents(request):
     for month in range (1,12):
         first_date = (year, month, 1)
         wkshop_date = nth_weekday(first_date, 1, 0)
-        start_time = datetime.strptime("19:30", "%H:%M").time()
-        end_time = datetime.strptime("21:30", "%H:%M").time()
+        start_time = datetime.strptime("19:30 +0800", "%H:%M %z").time()
+        end_time = datetime.strptime("21:30 +0800", "%H:%M %z").time()
         start_datetime = datetime.combine(wkshop_date, start_time)
         end_datetime = datetime.combine(wkshop_date, end_time)
 
@@ -173,8 +175,8 @@ def createwaccevents(request):
 
     first_date = (year, month, 1)
     compdate = nth_weekday(first_date, 1, 0)
-    start_time = datetime.strptime("19:30", "%H:%M").time()
-    end_time = datetime.strptime("21:30", "%H:%M").time()
+    start_time = datetime.strptime("19:30 +0800", "%H:%M %z").time()
+    end_time = datetime.strptime("21:30 +0800", "%H:%M %z").time()
     
     compnight = Event.objects.create(
             name = "Awards Dinner",
@@ -196,8 +198,8 @@ def move_imported_events(request):
     for month in range(1,12):
         old_date = (year, month, 1)
         compdate = nth_weekday(old_date, 3, 0)
-        start_time = datetime.strptime("19:30", "%H:%M").time()
-        end_time = datetime.strptime("21:30", "%H:%M").time()
+        start_time = datetime.strptime("19:30 +0800", "%H:%M %z").time()
+        end_time = datetime.strptime("21:30 +0800", "%H:%M %z").time()
         start_datetime = datetime.combine(compdate, start_time)
         end_datetime = datetime.combine(compdate, end_time)
         events = Event.objects.filter(starts__year = year, starts__month = month, name__icontains = "Competition")
@@ -216,7 +218,9 @@ def move_comps_to_1st(request):
         year = event.starts.year
         month = event.starts.month
         starts = datetime(year, month, 1, 19, 30)
+        starts = starts.replace(tzinfo=ZoneInfo("Australia/Perth"))
         ends = datetime(year, month, 1, 21, 30)
+        ends = ends.replace(tzinfo=ZoneInfo("Australia/Perth"))
         events = Event.objects.filter(starts__year = year, starts__month = month, name__icontains = "Competition")
         events.update(starts=starts, ends=ends)
             
@@ -353,7 +357,7 @@ def zip_comp_images(request, comp_pk):
     images = Image.objects.filter(competitions=comp, photo__isnull=False).distinct()
 
     zip_buffer = io.BytesIO()
-    zipname = f"WACC_download_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    zipname = f"WACC_download_{timezone.now().strftime('%Y%m%d_%H%M%S')}.zip"
 
     with ZipFile(zip_buffer, 'w') as myzip:
         for image in images:
@@ -372,7 +376,7 @@ def zip_gallery(request, gallery_pk):
     images = Image.objects.filter(galleries=gallery, photo__isnull=False).distinct()
 
     zip_buffer = io.BytesIO()
-    zipname = f"WACC_download_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    zipname = f"WACC_download_{timezone.now().strftime('%Y%m%d_%H%M%S')}.zip"
 
     with ZipFile(zip_buffer, 'w') as myzip:
         for image in images:
