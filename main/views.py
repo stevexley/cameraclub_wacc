@@ -87,6 +87,7 @@ class MainGalleryView(ListView):
 
         images = Image.objects.filter(
             photo__icontains='photo',
+            award__competition__event__ends__lt = timezone.now(),
             award__type__display_award=True
         ).annotate(
             max_end=Subquery(latest_judging)

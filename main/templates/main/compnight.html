@@ -1,31 +1,42 @@
 {% extends "main/base.html" %}
 {% block content %}
   <div class="container">
-    <div class="row">
-      <div class="col">
+    <h1>Competition Night, {{ competitions.first.event.starts|date:"l jS \o\f F Y" }}</h1>
+    <table class="table">
         {% for comp in competitions %}
-        <div class="mb-4">
-        {% if forloop.first %}
-        <h1>Competition Night, {{ comp.event.starts|date:"l jS \o\f F Y" }}</h1>
-        {% endif %}
+        <tr>
+          <td>{{ comp.type }}</td>
           {% if 'rint' in comp.type.type %}
-          <a class="btn btn-outline-primary mb-1" href="{% url 'competition_add_images' comp.id %}" >Add Images - {{ comp.type }}</a><br/>
-          <a class="btn btn-primary mb-1" href="{% url 'competition_edit_prints' pk=comp.id %}" >Edit Entries - {{ comp.type }}</a><br/>
-          <a class="btn btn-primary mb-1" href="{% url 'print_paper_voting' %}" >Add Paper Vote</a><br/>
-          <a class="btn btn-primary mb-1" href="{% url 'printvotetally' competition_id=comp.id %}" >Count Print Votes - {{ comp.type }}</a><br/>
+          <td>
+            <a class="btn btn-outline-primary mb-1" href="{% url 'competition_add_images' comp.id %}" >Add Images</a>
+          </td>
+          <td>
+            <a class="btn btn-primary mb-1" href="{% url 'competition_edit_prints' pk=comp.id %}" >Edit Entries</a>
+          </td>
+          <td>
+            <a class="btn btn-primary mb-1" href="{% url 'printvotetally' competition_id=comp.id %}" >Count Print Votes</a>
+          </td>
           {% else %}
-          <a class="btn btn-outline-primary mb-1" href="{% url 'slideshow' comp.id %}" >{{ comp.type }} Preview</a><br/>
-          <a class="btn btn-outline-primary mb-1" href="{% url 'judge_slideshow' comp.id %}" >{{ comp.type }} Judge's Comments</a><br/>
+          <td>
+            <a class="btn btn-outline-primary mb-1" href="{% url 'slideshow' comp.id %}" >Preview</a>
+          </td>
+          <td>
+            <a class="btn btn-outline-primary mb-1" href="{% url 'judge_slideshow' comp.id %}" >Judge's Comments</a>
+          </td>
+          <td></td>
           {% endif %}
-          <a class="btn btn-primary mb-1"
-             href="{% url 'edit_judge_awards' comp.id %}">Edit Judge Awards - {{ comp.type }}</a>
-          <a class="btn btn-primary mb-1"
-             href="{% url 'edit_member_awards' comp.id %}">Edit Member Awards - {{ comp.type }}</a>
-          </div>
-        {% endfor %}
-        <a class="btn btn-outline-primary" href="{% url 'all_slideshow' competitions.last.event.id %}" >Image Slideshow</a><br/>
-        </div>
-      </div>
-    </div>
+          <td>
+            <a class="btn btn-primary mb-1"
+             href="{% url 'edit_judge_awards' comp.id %}">Edit Judge Awards</a>
+          </td>
+          <td>
+            <a class="btn btn-primary mb-1"
+             href="{% url 'edit_member_awards' comp.id %}">Edit Member Awards</a>
+          </td>
+        {% endfor %}  
+      </table>
+      <a class="btn btn-primary mb-1" href="{% url 'print_paper_voting' %}" >Add Paper Vote</a></br/>
+      <a class="btn btn-outline-primary mb-1" href="{% url 'all_slideshow' competitions.first.event.id %}" >Image Slideshow</a><br/>
+      <a class="btn btn-outline-primary" href="{% url 'event' competitions.first.event.id %}" >Back to Event</a><br/>
   </div>
 {% endblock %}
