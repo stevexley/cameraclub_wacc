@@ -527,7 +527,8 @@ class EnterCompetitionView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     of the title) happen in the ImageForm."""
     login_url = "accounts/login/"
     redirect_field_name = "redirect_to"
-    model = Image  
+
+    model = Image
     form_class = ImageForm
     template_name = 'main/image_upload_form.html'
     success_message = "Entry Uploaded"
@@ -535,31 +536,36 @@ class EnterCompetitionView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     def get_initial(self):
         competition = Competition.objects.get(id=self.kwargs['pk'])
         author = Person.objects.get(user=self.request.user)
-        if 'Print' in competition.type.type:
-            print = True
-        else:
-            print = False
-        return {'competition': competition, 'author': author, 'print': print }
-    
-    def get_form_kwargs(self):
-        kwargs = super(EnterCompetitionView, self).get_form_kwargs()
-        kwargs.update({'pk': self.kwargs['pk']})  # to pass id to form
-        kwargs['source_view'] = 'enter_competition'  # Indicate the source view
-        return kwargs
 
+        return {
+            'competition': competition,
+            'author': author,
+            'print': 'Print' in competition.type.type,
+        }
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({
+            'pk': self.kwargs['pk'],
+            'source_view': 'enter_competition',
+        })
+        return kwargs
+    
     # Validation of photo done in the form
     def form_valid(self, form):
-        # Get competition so we can add the image to it
         competition = Competition.objects.get(id=self.kwargs['pk'])
-        image = form.save()
-        image.competitions.add(competition)
-        return super().form_valid(form)
-    
+
+        response = super().form_valid(form)
+
+        self.object.competitions.add(competition)
+
+        return response
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['competition'] = Competition.objects.get(id=self.kwargs['pk'])
         return context
-    
+
     def get_success_url(self):
         """Dynamically generate the success URL based on the event ID."""
         competition = Competition.objects.get(id=self.kwargs['pk'])
