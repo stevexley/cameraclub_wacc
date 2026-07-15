@@ -353,6 +353,18 @@ class EventDetailView(DetailView):
                     rule="One Entry"
                 ).exists()
 
+        # context object to allow showing of print voting button
+        context['print_voting'] = False
+        now = timezone.now()
+
+        competitions = Competition.objects.filter(
+            event__starts__lte=now,
+            event__ends__gte=now,
+            type__type__icontains = "print"
+            )
+        if competitions:
+            context['print_voting'] = True
+
         return context
 
 def remove_entry(request, comp_id, img_id):

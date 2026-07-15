@@ -363,7 +363,13 @@ def zip_comp_images(request, comp_pk):
         for image in images:
             imagefile = os.path.join(settings.MEDIA_ROOT, str(image.photo))
             # Slugify for safe filenames
-            newname = f"{slugify(image.author.firstname)}-{slugify(image.author.surname)}_{slugify(image.title)}.jpg"
+            if "WAPF" in comp.event.name or "PrintWest" in comp.event.name:
+                if "Mono" in comp.type.type:
+                    newname = f"m_WAC_{image.author.firstname} {image.author.surname}_{image.title}.jpg"
+                else:
+                    newname = f"c_WAC_{image.author.firstname} {image.author.surname}_{image.title}.jpg"
+            else:
+                newname = f"{slugify(image.author.firstname)}-{slugify(image.author.surname)}_{slugify(image.title)}.jpg"
             myzip.write(imagefile, newname)
 
     zip_buffer.seek(0)  # Go to the beginning of the BytesIO object

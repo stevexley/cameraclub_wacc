@@ -8,7 +8,11 @@
     {% for img in user_images %}
         {% if competition in img.competitions.all %}
             <div class="card smallcard">
+                {% if img.photo %}
                 <img class="object-fit-contain m-1" loading="lazy" src="{{ img.photo.url }}" alt="{{ img.title }}">
+                {% else %}
+                <p>No Image file</p>
+                {% endif %}
                 <a class="btn btn-outline-primary m-1" href="{% url 'remove_entry' comp_id=competition.id img_id=img.id %}">Remove Entry</a>
             </div>
         {% endif %}
