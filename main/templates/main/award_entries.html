@@ -5,6 +5,7 @@
     {% csrf_token %}
     {{ formset.management_form }}
     <div class="col-lg-7">
+        <h2>{{competition.type.type}}</h2>
         <table class="table">
             <thead>
                 <tr>

@@ -33,7 +33,7 @@
                         <h5>{{ subject.description }}</h5>
                         </div>
                     {% endif %}
-                    {% if event.starts|date:"Y-m-d" >= todays_date %}
+                    {% if not all_awarded %}
                         {% if judge.person and user.person == judge.person %}
                             <a class="btn btn-block btn-primary mb-2"
                             href="{% url 'judge_notes' event.id %}">Notes for the Judge</a>

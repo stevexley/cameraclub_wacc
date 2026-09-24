@@ -64,7 +64,14 @@
                 {% endfor %}
                 <div class="carousel-item">
                     <div class="d-flex align-items-center justify-content-center min-vh-100">
-                        <a class="btn btn-primary" href="{% url 'judge_slideshow' pk=competition.id %}" >Judge's Comments and Awards</a>
+                        {% if "Set" in competition.type.type %}
+                        <a class="btn btn-primary" href="{% url 'judge_slideshow' pk=competition.id %}" >Judge's Comments and Awards (Set)</a>
+                        <a class="btn btn-primary mx-2" href="{% url 'slideshow' pk=othercomp.id %}" >Open Images Preview</a>
+                        {% else %}
+                        <a class="btn btn-primary" href="{% url 'judge_slideshow' pk=competition.id %}" >Judge's Comments and Awards (Open)</a>
+                        <a class="btn btn-primary mx-2" href="{% url 'slideshow' pk=othercomp.id %}" >Set Images Preview</a>
+                        {% endif %}
+                        <a class="btn btn-primary mx-2" href="{% url 'compnight' %}">Back</a>
                     </div>
                 </div>
             </div>

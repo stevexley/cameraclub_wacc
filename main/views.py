@@ -219,6 +219,14 @@ class EventsView(YearArchiveView):
         context['events_by_month'] = dict(events_by_month)
         context['months'] = list(calendar.month_name)[1:]
         context['right_now'] = timezone.now()
+        context['print_voting'] = False
+        print_comps_now = Competition.objects.filter(
+            event__starts__lte=context['right_now'],
+            event__ends__gte=context['right_now'],
+            type__type__icontains = "print"
+            )
+        if print_comps_now:
+            context['print_voting'] = True
         return context
 
 @permission_required("main.change_event")
@@ -265,6 +273,15 @@ class EventDetailView(DetailView):
         context['user'] = self.request.user
         context['galleries'] = Gallery.objects.filter(event=event)
 
+        context['print_voting'] = False
+        print_comps_now = Competition.objects.filter(
+            event__starts__lte=timezone.now(),
+            event__ends__gte=timezone.now(),
+            type__type__icontains = "print"
+            )
+        if print_comps_now:
+            context['print_voting'] = True
+
         user_images = Image.objects.none()
 
         # ------------------------------
@@ -278,6 +295,7 @@ class EventDetailView(DetailView):
         # ------------------------------
         # Loop over competitions
         # ------------------------------
+        countcomps = 0
         for comp in context['comps']:
 
             # --------------------------
@@ -291,52 +309,60 @@ class EventDetailView(DetailView):
             except Exception:
                 pass
 
-            # --------------------------
-            # Awards per comp 
-            # --------------------------
-            
-            for comp in context['comps']:
-                comp.judge_awards = Award.objects.filter(
-                    competition=comp,
-                    type__awarded_by__judge=True
-                ).order_by('-type__points')
+        # --------------------------
+        # Awards per comp 
+        # --------------------------
+        
+        for comp in context['comps']:
+            comp.judge_awards = Award.objects.filter(
+                competition=comp,
+                type__awarded_by__judge=True
+            ).order_by('-type__points')
 
-                comp.member_awards = Award.objects.filter(
-                    competition=comp,
-                    type__awarded_by__members=True
-                ).order_by('-type__points')
+            comp.member_awards = Award.objects.filter(
+                competition=comp,
+                type__awarded_by__members=True
+            ).order_by('-type__points')
 
-                if not comp.member_awards and comp.members_vote:
-                    if comp.judging_closes < timezone.now() and comp.event.starts < timezone.now():
-                        count_votes(comp)
-                        comp.member_awards = Award.objects.filter(
-                            competition=comp,
-                            type__awarded_by__members=True
-                        ).order_by('-type__points')
-            # comp_judge_awards = Award.objects.filter(
-            #     competition=comp,
-            #     type__awarded_by__judge=True
-            # ).order_by('-type__points')
+            if not comp.member_awards and comp.members_vote:
+                if comp.judging_closes < timezone.now() and comp.event.starts < timezone.now():
+                    count_votes(comp)
+                    comp.member_awards = Award.objects.filter(
+                        competition=comp,
+                        type__awarded_by__members=True
+                    ).order_by('-type__points')
+        # comp_judge_awards = Award.objects.filter(
+        #     competition=comp,
+        #     type__awarded_by__judge=True
+        # ).order_by('-type__points')
 
-            # context['judge_awards'] |= comp_judge_awards
+        # context['judge_awards'] |= comp_judge_awards
 
-            # AWARDED IMAGES FOR THIS COMPETITION
-                comp.awarded_images = (
-                    Image.objects
-                    .filter(
-                        award__type__display_image=True,
-                        award__competition=comp,
-                    )
-                    .annotate(
-                        total_points=Coalesce(
-                            Sum(
-                                'award__type__points',
-                            ),
-                            0  # treat NULL as 0
-                        )
-                    )
-                    .order_by('-total_points', 'title')
+        # AWARDED IMAGES FOR THIS COMPETITION
+            comp.awarded_images = (
+                Image.objects
+                .filter(
+                    award__type__display_image=True,
+                    award__competition=comp,
                 )
+                .annotate(
+                    total_points=Coalesce(
+                        Sum(
+                            'award__type__points',
+                        ),
+                        0  # treat NULL as 0
+                    )
+                )
+                .order_by('-total_points', 'title')
+            )
+            if comp.member_awards and comp.judge_awards:
+                countcomps += 1
+
+        context['all_awarded'] = False
+        print(str(len(context['comps'])))
+        print(str(countcomps))
+        if len(context['comps']) == countcomps and countcomps > 0:
+            context['all_awarded'] = True
 
         # ------------------------------
         # User images flags
@@ -1003,6 +1029,21 @@ class CompNightImagesView(PermissionRequiredMixin, DetailView):
     permission_required = "main.change_competition"
     model = Competition
     template_name = 'main/slideshow.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        event = context['competition'].event
+        if "Set" in context['competition'].type.type:
+            context['othercomp'] = Competition.objects.filter(event=event
+                                                        ).filter(
+                                                            Q(type__type__icontains="Open") &
+                                                            Q(type__type__icontains="Digital")
+                                                        ).first()
+        else:
+            context['othercomp'] = Competition.objects.filter(event = event,
+                                                            type__type__icontains="Set Digital"
+                                                            ).first()
+        return context
 
 class AllCompsSlideshow(PermissionRequiredMixin, DetailView):
     '''Slideshow of images in competition'''
