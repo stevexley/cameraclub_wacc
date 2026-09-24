@@ -24,11 +24,11 @@
                                 <input type="checkbox" disabled>
                             {% endif %}
                             {{ field }}
+                        {% elif field.name == 'title' %}
+                            {{ field }}
+                            <div id="titleHelp" class="form-text">The title will be auto-capitalised for display.</div>
                         {% else %}
                             {{ field }}
-                        {% endif %}
-                        {% if field.name == 'title' %}
-                            <div id="titleHelp" class="form-text">The title will be auto-capitalised for display.</div>
                         {% endif %}
                     </div>
                 {% endfor %}
@@ -97,5 +97,9 @@
             }
         });
     });
-    </script>
+</script>
+<script>
+    // focus on title input on page load.
+    document.getElementById('id_title').focus();
+</script>
 {% endblock scripts %}
